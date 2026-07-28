@@ -48,6 +48,7 @@ canvas { display: block; }
 @keyframes puIn { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 #pu-shield { border: 1px solid rgba(103, 232, 249, .5); color: #67e8f9; box-shadow: 0 0 18px rgba(103, 232, 249, .3); }
 #pu-magnet { border: 1px solid rgba(244, 114, 182, .5); color: #f472b6; box-shadow: 0 0 18px rgba(244, 114, 182, .3); }
+#pu-rage { border: 1px solid rgba(239, 68, 68, .55); color: #ef4444; box-shadow: 0 0 18px rgba(239, 68, 68, .35); }
 .pu-icon { font-size: 17px; }
 .pu-item.low .pu-time { color: #fb7185; animation: blinkSoft .4s infinite alternate; }
 
@@ -296,36 +297,3 @@ canvas { display: block; }
 .ghost-btn.danger { border-color: rgba(251, 113, 133, .5); color: #fb7185; }
 .ghost-btn.danger:hover { border-color: #fb7185; box-shadow: 0 0 18px rgba(251, 113, 133, .3); color: #fff; }
 .ghost-btn.armed { background: rgba(251, 113, 133, .2); color: #fff; border-color: #fb7185; }
-
-/* ---------- ESC 退出弹窗 ---------- */
-.exit-overlay {
-  position: fixed; inset: 0; z-index: 45;
-  display: flex; flex-direction: column; justify-content: center; align-items: center;
-  background: rgba(2, 3, 14, .78); backdrop-filter: blur(10px);
-  transition: opacity .25s ease; text-align: center;
-}
-.exit-overlay.hidden { opacity: 0; pointer-events: none; }
-.exit-box {
-  background: rgba(12, 16, 40, .92); border: 1px solid rgba(251, 113, 133, .4);
-  border-radius: 16px; padding: 42px 52px;
-  box-shadow: 0 0 44px rgba(251, 113, 133, .18);
-}
-.exit-title-text {
-  font-size: 24px; font-weight: 900; letter-spacing: 4px;
-  color: #fb7185; text-shadow: 0 0 20px rgba(251, 113, 133, .45);
-  margin-bottom: 34px;
-}
-.exit-btn-row { display: flex; gap: 18px; justify-content: center; }
-.exit-btn {
-  font-family: inherit; font-size: 16px; font-weight: 700; letter-spacing: 3px;
-  padding: 13px 36px; border-radius: 999px; cursor: pointer;
-  border: 1px solid rgba(120, 144, 220, .4); color: #9fb3e8;
-  background: rgba(12, 16, 40, .55); transition: all .2s;
-}
-.exit-btn:hover { color: #e2f3ff; border-color: #67e8f9; box-shadow: 0 0 18px rgba(103, 232, 249, .25); }
-.exit-btn.exit-btn-danger {
-  border-color: rgba(251, 113, 133, .5); color: #fb7185;
-}
-.exit-btn.exit-btn-danger:hover {
-  border-color: #fb7185; box-shadow: 0 0 22px rgba(251, 113, 133, .35); color: #fff;
-}

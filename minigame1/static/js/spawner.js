@@ -28,10 +28,12 @@ NR.spawner = (function () {
   const warnMat = new THREE.SpriteMaterial({ map: NR.textures.warn(), transparent: true, depthWrite: false });
   const shieldIconMat = new THREE.SpriteMaterial({ map: NR.textures.shieldIcon(), transparent: true, depthWrite: false });
   const magnetIconMat = new THREE.SpriteMaterial({ map: NR.textures.magnetIcon(), transparent: true, depthWrite: false });
+  const rageIconMat = new THREE.SpriteMaterial({ map: NR.textures.rageIcon(), transparent: true, depthWrite: false });
   const chevMat = new THREE.MeshBasicMaterial({ map: NR.textures.chevron(), transparent: true, opacity: 0.9 });
   const matCoin = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xa16207, emissiveIntensity: 0.8, metalness: 0.8, roughness: 0.25 });
   const matShield = new THREE.MeshStandardMaterial({ color: 0x67e8f9, emissive: 0x0e7490, emissiveIntensity: 1.2, roughness: 0.3, metalness: 0.5 });
   const matMagnet = new THREE.MeshStandardMaterial({ color: 0xf472b6, emissive: 0x9d174d, emissiveIntensity: 1.2, roughness: 0.3, metalness: 0.5 });
+  const matRage = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x991b1b, emissiveIntensity: 1.4, roughness: 0.3, metalness: 0.5 });
 
   // ---- 主题化障碍材质 ----
   const std = o => new THREE.MeshStandardMaterial(o);
@@ -237,11 +239,13 @@ NR.spawner = (function () {
     for (let i = 0; i < n; i++) addCoin(C.LANES[laneIdx], 0.95, z - i * 2.4);
   }
 
-  // ---- 道具 ----
+  // ---- 道具（护盾/磁铁/红色无敌） ----
+  const PU_MATS = { shield: matShield, magnet: matMagnet, rage: matRage };
+  const PU_ICONS = { shield: shieldIconMat, magnet: magnetIconMat, rage: rageIconMat };
   function addPowerup(kind, laneIdx, z) {
-    const mesh = new THREE.Mesh(geoPowerup, kind === 'shield' ? matShield : matMagnet);
+    const mesh = new THREE.Mesh(geoPowerup, PU_MATS[kind] || matShield);
     mesh.position.set(C.LANES[laneIdx], 1.0, z);
-    const icon = new THREE.Sprite(kind === 'shield' ? shieldIconMat : magnetIconMat);
+    const icon = new THREE.Sprite(PU_ICONS[kind] || shieldIconMat);
     icon.scale.set(0.55, 0.55, 1);
     icon.position.y = 0.85;
     mesh.add(icon);
@@ -250,7 +254,10 @@ NR.spawner = (function () {
   }
   function maybePowerup(z) {
     if (Math.random() < C.POWERUP_CHANCE) {
-      addPowerup(Math.random() < 0.5 ? 'shield' : 'magnet', (Math.random() * 3) | 0, z);
+      const r = Math.random();
+      // 红色无敌为稀有道具，刷新率显著更低
+      const kind = r < 0.12 ? 'rage' : (r < 0.56 ? 'shield' : 'magnet');
+      addPowerup(kind, (Math.random() * 3) | 0, z);
     }
   }
 

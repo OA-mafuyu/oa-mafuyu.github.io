@@ -269,8 +269,8 @@
   <script src="banks.js"></script>
   <script>
     var selectedBank = (function () {
-      try { return localStorage.getItem('selected_bank') || '题库1'; }
-      catch (e) { return '题库1'; }
+      try { return localStorage.getItem('selected_bank') || '题库1--通用（并非）'; }
+      catch (e) { return '题库1--通用（并非）'; }
     })();
     var questions = (typeof BANKS !== 'undefined' && BANKS[selectedBank]) ? BANKS[selectedBank] : [];
   </script>

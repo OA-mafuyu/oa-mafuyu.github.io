@@ -1,10 +1,4 @@
 <!DOCTYPE html>
-<!--
-  ============================================================
-  ★ 隐藏功能备忘：在游戏中通过键盘依次输入 mafuyu
-     可立即获得 10000 分并结束游戏 ★
-  ============================================================
--->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -38,6 +32,7 @@
 <div id="powerups">
   <div class="pu-item" id="pu-shield"><span class="pu-icon">◈</span><span class="pu-time">0</span></div>
   <div class="pu-item" id="pu-magnet"><span class="pu-icon">◎</span><span class="pu-time">0</span></div>
+  <div class="pu-item" id="pu-rage"><span class="pu-icon">✸</span><span class="pu-time">0</span></div>
 </div>
 
 <div id="combo">COMBO ×2</div>
@@ -64,12 +59,14 @@
     <button class="ghost-btn" id="btn-ach">成就</button>
     <button class="ghost-btn" id="btn-skin">皮肤</button>
   </div>
+  <div class="menu-row">
+    <button class="ghost-btn" id="btn-home-quiz">返回答题主页</button>
+  </div>
   <div class="controls-hint">
     <span class="key">←</span><span class="key">→</span> 变道 &nbsp;
     <span class="key">↑</span>/<span class="key">空格</span> 跳跃（空中再按 = 二段跳） &nbsp;
     <span class="key">↓</span> 滑铲 &nbsp;
     <span class="key">P</span> 暂停 &nbsp;
-    <span class="key">Esc</span> 退出 &nbsp;
     <span class="key">M</span> 静音<br>
     蓝色高台可跳上去奔跑 · 小心左右滑动的紫色高墙<br>
     <span class="blink">按 空格 快速开始</span>
@@ -87,7 +84,7 @@
     <div class="stat-cell"><div class="v" id="best-score">0</div><div class="k">最高分</div></div>
   </div>
   <button class="btn" id="btn-restart">再来一局</button>
-  <button class="btn" id="btn-return-quiz" style="background:#fff;color:#000;margin-top:12px;">返回答题（+奖励时间）</button>
+  <button class="btn" id="btn-return-quiz" style="display:none;">返回答题（+奖励时间）</button>
   <div class="menu-row">
     <button class="ghost-btn" id="btn-rank2">排行榜</button>
     <button class="ghost-btn" id="btn-menu">主菜单</button>
@@ -123,16 +120,18 @@
 <div class="overlay hidden" id="overlay-pause">
   <div class="pause-title">已暂停</div>
   <div class="controls-hint">按 <span class="key">P</span> 继续</div>
+  <div class="menu-row">
+    <button class="ghost-btn" id="btn-exit-confirm">退出游戏</button>
+  </div>
 </div>
 
-<!-- ESC 退出弹窗 -->
-<div class="exit-overlay hidden" id="exitOverlay">
-  <div class="exit-box">
-    <div class="exit-title-text">确定要退出吗？</div>
-    <div class="exit-btn-row">
-      <button class="exit-btn exit-btn-danger" id="btnExitConfirm">狠心退出</button>
-      <button class="exit-btn" id="btnExitCancel">继续</button>
-    </div>
+<!-- 退出确认 -->
+<div class="overlay hidden" id="overlay-exit-confirm">
+  <div class="pause-title" style="font-size:28px;">确认退出？</div>
+  <div class="controls-hint">退出后将结算当前分数，可查看是否获得奖励时间</div>
+  <div class="menu-row" style="gap:24px;">
+    <button class="btn" id="btn-exit-yes" style="margin-top:0; padding:14px 36px; font-size:16px;">确 认 退 出</button>
+    <button class="ghost-btn" id="btn-exit-no" style="padding:14px 36px;">继 续 游 戏</button>
   </div>
 </div>
 

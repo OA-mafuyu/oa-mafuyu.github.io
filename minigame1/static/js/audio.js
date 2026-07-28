@@ -220,6 +220,25 @@ NR.audio = (function () {
     go()        { beep(880, 0.25, 'square', 0.11); },
     powerup()   { beep(523, 0.1, 'sine', 0.1); setTimeout(() => beep(659, 0.1, 'sine', 0.1), 80); setTimeout(() => beep(880, 0.18, 'sine', 0.1), 160); },
     shieldBreak(){ beep(300, 0.25, 'sawtooth', 0.12, 90); },
+    boom() {
+      if (!ctx || muted) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(110, t);
+      o.frequency.exponentialRampToValueAtTime(32, t + 0.22);
+      g.gain.setValueAtTime(0.2, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+      o.connect(g).connect(master);
+      o.start(t); o.stop(t + 0.26);
+      const src = ctx.createBufferSource(); src.buffer = getNoise();
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
+      const g2 = ctx.createGain();
+      g2.gain.setValueAtTime(0.12, t);
+      g2.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+      src.connect(lp).connect(g2).connect(master);
+      src.start(t); src.stop(t + 0.2);
+    },
     warp()      { beep(180, 0.5, 'sawtooth', 0.07, 1400); setTimeout(() => beep(900, 0.3, 'sine', 0.08, 1800), 120); }
   };
 })();

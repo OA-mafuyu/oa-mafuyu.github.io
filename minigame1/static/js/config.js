@@ -12,9 +12,11 @@ NR.CONF = {
   BASE_SPEED: 13,
   MAX_SPEED: 30,
   SPEED_RAMP: 0.14,          // 每秒增速
-  SHIELD_TIME: 7,            // 护盾持续秒数
   MAGNET_TIME: 8,            // 磁铁持续秒数
-  MAGNET_RANGE: 3.4,         // 磁铁吸附半径
+  MAGNET_RANGE: 4.2,         // 磁铁吸附半径
+  RAGE_TIME: 15,             // 红色无敌道具持续秒数
+  RAGE_BONUS: 30,            // 无敌撞碎障碍加分
+  SHIELD_BONUS: 15,          // 护盾撞碎障碍加分
   MILESTONE: 400,            // 里程碑间隔分
   STREAK_WINDOW: 1.5,        // 连击有效窗口秒
   POWERUP_CHANCE: 0.14       // 每行生成道具概率

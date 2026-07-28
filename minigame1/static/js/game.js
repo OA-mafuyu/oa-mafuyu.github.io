@@ -15,7 +15,6 @@
   // ---------- 游戏状态 ----------
   let speed = C.BASE_SPEED, score = 0, dist = 0, coinCount = 0, best = 0;
   let state = 'start'; // start | countdown | playing | paused | over
-  let exitOverlayShown = false;
   let distSinceSpawn = 0, spawnInterval = 26;
   let shakeT = 0, runTime = 0, dustT = 0;
   let streak = 0, streakT = 0;
@@ -24,16 +23,17 @@
   let sceneIdx = 0;
   let cdT = 0, cdStep = 0;
   let warpT = 0;              // 场景跃迁过渡计时
+  let hitStopT = 0;           // 击中停顿（慢动作）
   let maxSpeedReached = false;
 
   // ---------- 道具状态 ----------
-  let shieldT = 0, magnetT = 0;
+  let hasShield = false, magnetT = 0, rageT = 0; // 护盾为持有型：必定抵挡一次死亡
 
   // ---------- DOM ----------
   const $ = id => document.getElementById(id);
   const scoreEl = $('score'), coinsEl = $('coins'), distEl = $('dist'), speedEl = $('speed-val');
   const comboEl = $('combo'), bannerEl = $('banner'), cdEl = $('countdown'), fxEl = $('fx');
-  const puShield = $('pu-shield'), puMagnet = $('pu-magnet');
+  const puShield = $('pu-shield'), puMagnet = $('pu-magnet'), puRage = $('pu-rage');
 
   best = NR.store.get('best', 0);
   let currentSkin = NR.store.get('skin', 'cyan');
@@ -193,16 +193,21 @@
     $('speed-max').style.display = speed >= C.MAX_SPEED - 0.01 ? 'inline-block' : 'none';
   }
   function updatePowerupUI() {
-    const sOn = shieldT > 0, mOn = magnetT > 0;
-    puShield.classList.toggle('active', sOn);
+    const mOn = magnetT > 0, rOn = rageT > 0;
+    puShield.classList.toggle('active', hasShield);
     puMagnet.classList.toggle('active', mOn);
-    if (sOn) {
-      puShield.querySelector('.pu-time').textContent = Math.ceil(shieldT);
-      puShield.classList.toggle('low', shieldT < 2);
+    puRage.classList.toggle('active', rOn);
+    if (hasShield) {
+      puShield.querySelector('.pu-time').textContent = '×1'; // 持有型护盾，无倒计时
+      puShield.classList.remove('low');
     }
     if (mOn) {
       puMagnet.querySelector('.pu-time').textContent = Math.ceil(magnetT);
       puMagnet.classList.toggle('low', magnetT < 2);
+    }
+    if (rOn) {
+      puRage.querySelector('.pu-time').textContent = Math.ceil(rageT);
+      puRage.classList.toggle('low', rageT < 5);
     }
   }
   function updateMuteBtn() {
@@ -272,18 +277,70 @@
     b.classList.remove('armed');
   }
 
+  // ================= 返回答题 + 作弊码 =================
+  let fromQuiz = false;
+  try { fromQuiz = localStorage.getItem('quiz_returning') === 'true'; } catch (e) {}
+
+  let cheatBuffer = '';
+  let cheatTimer = 0;
+  const CHEAT_TIMEOUT = 2.0;
+
+  function calcBonusTime(s) {
+    var bonus = 0;
+    if (s >= 10000) bonus = 15;
+    else if (s >= 5000) bonus = 10;
+    else if (s >= 2500) bonus = 5;
+    return bonus;
+  }
+
+  function returnToQuiz(finalScore) {
+    var bonus = calcBonusTime(finalScore);
+    try {
+      localStorage.setItem('quiz_bonus_time', String(bonus));
+      localStorage.setItem('quiz_returning', 'true');
+    } catch (e) {}
+    window.location.href = '../quiz.html';
+  }
+
+  function checkCheat(key) {
+    cheatBuffer += key.toLowerCase();
+    cheatTimer = CHEAT_TIMEOUT;
+    if (cheatBuffer.indexOf('mafuyu') >= 0) {
+      cheatBuffer = '';
+      score += 10000;
+      gameOver();
+      return;
+    }
+    if (cheatBuffer.indexOf('invincible') >= 0) {
+      cheatBuffer = '';
+      if (typeof NR.dev !== 'undefined') {
+        NR.dev.invincible = true;
+        if (NR.dev.refreshUI) NR.dev.refreshUI();
+      } else {
+        window.__invincible = true;
+      }
+      popText('无敌模式!', 'pink');
+      showBanner('INVINCIBLE!');
+      shakeT = Math.max(shakeT, 0.2);
+    }
+  }
+
   function bindMenus() {
     $('btn-start').addEventListener('click', startGame);
     $('btn-restart').addEventListener('click', startGame);
-    $('btn-return-quiz').addEventListener('click', returnToQuiz);
-    // 根据进入来源显示/隐藏按钮
-    applyEntryMode();
     $('btn-menu').addEventListener('click', () => {
       $('overlay-over').classList.add('hidden');
       $('overlay-start').classList.remove('hidden');
       state = 'start';
       NR.audio.setState('start');
     });
+    // 返回答题按钮
+    var returnBtn = $('btn-return-quiz');
+    if (returnBtn) {
+      returnBtn.addEventListener('click', function () {
+        returnToQuiz(Math.floor(score));
+      });
+    }
     const openRank = () => { renderRank(); disarmRankBtn(); $('overlay-rank').classList.remove('hidden'); };
     $('btn-rank').addEventListener('click', openRank);
     $('btn-rank2').addEventListener('click', openRank);
@@ -307,9 +364,12 @@
     $('btn-skin').addEventListener('click', () => { renderSkins(); $('overlay-skin').classList.remove('hidden'); });
     $('btn-skin-close').addEventListener('click', () => $('overlay-skin').classList.add('hidden'));
     $('btn-mute').addEventListener('click', () => { NR.audio.toggleMute(); updateMuteBtn(); });
-    // ESC 退出弹窗按钮
-    $('btnExitConfirm').addEventListener('click', confirmExitToOver);
-    $('btnExitCancel').addEventListener('click', hideExitOverlay);
+    // 退出确认
+    $('btn-exit-confirm').addEventListener('click', showExitConfirm);
+    $('btn-exit-yes').addEventListener('click', doExitGame);
+    $('btn-exit-no').addEventListener('click', hideExitConfirm);
+    // 主页返回答题主页
+    $('btn-home-quiz').addEventListener('click', () => { window.location.href = '../quiz.html'; });
   }
 
   // ================= 输入 =================
@@ -349,7 +409,28 @@
       state = 'paused';
       NR.audio.setState('paused');
       $('overlay-pause').classList.remove('hidden');
+      $('overlay-exit-confirm').classList.add('hidden');
     } else if (state === 'paused') {
+      state = 'playing';
+      NR.audio.setState('playing');
+      $('overlay-pause').classList.add('hidden');
+      $('overlay-exit-confirm').classList.add('hidden');
+      clock.getDelta();
+    }
+  }
+
+  function showExitConfirm() {
+    if (state === 'playing') {
+      state = 'paused';
+      NR.audio.setState('paused');
+    }
+    $('overlay-pause').classList.add('hidden');
+    $('overlay-exit-confirm').classList.remove('hidden');
+  }
+
+  function hideExitConfirm() {
+    $('overlay-exit-confirm').classList.add('hidden');
+    if (state === 'paused') {
       state = 'playing';
       NR.audio.setState('playing');
       $('overlay-pause').classList.add('hidden');
@@ -357,55 +438,32 @@
     }
   }
 
-  // ---------- ESC 退出弹窗 ----------
-  function showExitOverlay() {
-    state = 'paused';
-    NR.audio.setState('paused');
-    exitOverlayShown = true;
-    $('exitOverlay').classList.remove('hidden');
-  }
-
-  function hideExitOverlay() {
-    exitOverlayShown = false;
-    $('exitOverlay').classList.add('hidden');
-    state = 'playing';
-    NR.audio.setState('playing');
-    clock.getDelta();
-  }
-
-  function confirmExitToOver() {
-    exitOverlayShown = false;
-    $('exitOverlay').classList.add('hidden');
+  function doExitGame() {
+    // 走 gameOver 结算当前分数，不再直接跳转
     gameOver();
   }
 
-  // ---------- 作弊码 ----------
-  let cheatBuffer = '';
-
   function bindInput() {
     addEventListener('keydown', e => {
-      // 作弊码检测：键盘输入 mafuyu → 直接获得 10000 分并结束游戏
-      if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
-        cheatBuffer += e.key.toLowerCase();
-        if (cheatBuffer.length > 6) cheatBuffer = cheatBuffer.slice(-6);
-        if (cheatBuffer === 'mafuyu' && (state === 'playing' || state === 'countdown')) {
-          cheatBuffer = '';
-          score = 10000;
-          gameOver();
-          return;
-        }
-      }
-
       if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'].includes(e.code)) e.preventDefault();
       if (e.code === 'KeyM') { NR.audio.toggleMute(); updateMuteBtn(); return; }
       if (e.code === 'KeyP') return togglePause();
+      // Esc：游戏中显示退出确认
       if (e.code === 'Escape') {
-        if (!exitOverlayShown && state === 'playing') { showExitOverlay(); return; }
-        if (exitOverlayShown) { hideExitOverlay(); return; }
-        if (state === 'paused') { togglePause(); return; }
+        if (state === 'playing' || state === 'paused') {
+          // 如果退出确认已经显示，关闭它并继续
+          if (!$('overlay-exit-confirm').classList.contains('hidden')) return hideExitConfirm();
+          return showExitConfirm();
+        }
         return;
       }
       if ((state === 'start' || state === 'over') && (e.code === 'Space' || e.code === 'Enter')) return startGame();
+
+      // 作弊码输入检测
+      if (e.key && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        checkCheat(e.key);
+      }
+
       switch (e.code) {
         case 'ArrowLeft': case 'KeyA': moveLane(-1); break;
         case 'ArrowRight': case 'KeyD': moveLane(1); break;
@@ -453,8 +511,8 @@
     streak = 0; streakT = 0; nextMilestone = C.MILESTONE;
     sceneIdx = 0;
     distSinceSpawn = 0; spawnInterval = 26; shakeT = 0;
-    maxSpeedReached = false; warpT = 0;
-    shieldT = 0; magnetT = 0;
+    maxSpeedReached = false; warpT = 0; hitStopT = 0;
+    hasShield = false; magnetT = 0; rageT = 0;
     shieldMesh.visible = false;
     NR.world.setTheme('city');
     NR.spawner.setTheme('city');
@@ -463,6 +521,7 @@
     $('overlay-start').classList.add('hidden');
     $('overlay-over').classList.add('hidden');
     $('overlay-pause').classList.add('hidden');
+    $('overlay-exit-confirm').classList.add('hidden');
     $('overlay-rank').classList.add('hidden');
     $('overlay-skin').classList.add('hidden');
     $('overlay-ach').classList.add('hidden');
@@ -482,9 +541,15 @@
     state = 'over';
     NR.audio.setState('over');
     NR.audio.crash();
-    shakeT = 0.55;
-    NR.particles.burst(player.position.x, 1, 0, 0xfb7185, 22, 5);
-    NR.particles.burst(player.position.x, 1, 0, 0xfde047, 12, 3.5);
+    shakeT = 0.8;
+    hitStopT = 0.15;
+    NR.particles.debris(player.position.x, 1, 0, 0x22d3ee, 10, 5);
+    NR.particles.ring(player.position.x, 1, 0, 0xfb7185, true);
+    for (let i = 0; i < 3; i++) {
+      NR.particles.spawn(player.position.x, 1, 0, 0xffffff, 1.6 + Math.random(), 0.35, 0, 0, 0, 0);
+    }
+    NR.particles.burst(player.position.x, 1, 0, 0xfb7185, 30, 6.5);
+    NR.particles.burst(player.position.x, 1, 0, 0xfde047, 18, 5);
 
     const finalScore = Math.floor(score);
     const isRecord = finalScore > best;
@@ -499,6 +564,28 @@
     $('final-coins').textContent = coinCount;
     $('best-score').textContent = best;
     $('new-record').style.display = isRecord ? 'block' : 'none';
+
+    // 隐藏退出确认弹窗和暂停面板
+    $('overlay-exit-confirm').classList.add('hidden');
+    $('overlay-pause').classList.add('hidden');
+
+    // 根据入口显示不同按钮
+    var bonus = calcBonusTime(finalScore);
+    if (fromQuiz) {
+      // 从答题进入：隐藏再来一局，显示返回答题
+      $('btn-restart').style.display = 'none';
+      var retBtn = $('btn-return-quiz');
+      if (retBtn) {
+        retBtn.style.display = '';
+        retBtn.textContent = '返回答题（+' + bonus + '秒）';
+      }
+    } else {
+      // 从首页进入：显示再来一局，隐藏返回答题
+      $('btn-restart').style.display = '';
+      var retBtn = $('btn-return-quiz');
+      if (retBtn) retBtn.style.display = 'none';
+    }
+
     setTimeout(() => $('overlay-over').classList.remove('hidden'), 700);
   }
 
@@ -507,10 +594,14 @@
     NR.audio.powerup();
     NR.achieve.bump('power');
     if (kind === 'shield') {
-      shieldT = C.SHIELD_TIME;
-      shieldMesh.visible = true;
-      popText('护盾激活!', 'cyan');
+      hasShield = true;
+      popText('护盾 · 抵挡一次!', 'cyan');
       showBanner('SHIELD ON');
+    } else if (kind === 'rage') {
+      rageT = C.RAGE_TIME;
+      popText('无敌 30 秒!', 'pink');
+      showBanner('INVINCIBLE!');
+      shakeT = Math.max(shakeT, 0.2);
     } else {
       magnetT = C.MAGNET_TIME;
       popText('磁铁激活!', 'pink');
@@ -519,21 +610,49 @@
     updatePowerupUI();
   }
 
+  /* 撞碎障碍：本体 3D 碎块 + 冲击波双环 + 闪光 + 三层粒子 + 击中停顿 + 强震屏 */
+  function explodeObstacle(o, color, bonus) {
+    const p = o.mesh.position;
+    const midY = (o.bottom + o.top) / 2;
+    // 障碍本体颜色的 3D 碎块飞溅
+    let baseColor = color;
+    try { baseColor = (o.body || o.mesh).material.color.getHex(); } catch (e) {}
+    NR.particles.debris(p.x, midY, p.z, baseColor, 12, 6);
+    // 冲击波双环
+    NR.particles.ring(p.x, midY, p.z, color, true);
+    NR.particles.ring(p.x, midY, p.z, 0xffffff, false);
+    // 中心白色闪光
+    for (let i = 0; i < 4; i++) {
+      NR.particles.spawn(p.x, midY, p.z, 0xffffff, 1.6 + Math.random() * 1.2, 0.35, 0, 0, 0, 0);
+    }
+    // 三层爆炸碎片
+    NR.particles.burst(p.x, midY, p.z, color, 34, 7.5);
+    NR.particles.burst(p.x, midY, p.z, 0xfde047, 18, 5.5);
+    NR.particles.burst(p.x, midY, p.z, 0xffffff, 10, 3);
+    NR.audio.boom();
+    hitStopT = 0.09; // 击中停顿
+    shakeT = Math.max(shakeT, 0.65);
+    score += bonus;
+    popText('粉碎 +' + bonus, 'gold');
+    NR.spawner.removeObstacle(o);
+  }
+
   function breakShield() {
-    shieldT = 0;
-    shieldMesh.visible = false;
+    hasShield = false;
     NR.audio.shieldBreak();
     NR.achieve.bump('shield');
     NR.particles.burst(player.position.x, 1, 0, 0x67e8f9, 18, 4);
     popText('护盾抵挡!', 'cyan');
-    shakeT = 0.3;
+    shakeT = Math.max(shakeT, 0.45);
     updatePowerupUI();
   }
 
   // ================= 主循环 =================
   function animate() {
     requestAnimationFrame(animate);
-    const dt = Math.min(clock.getDelta(), 0.05);
+    const rawDt = Math.min(clock.getDelta(), 0.05);
+    if (hitStopT > 0) hitStopT -= rawDt;
+    const dt = hitStopT > 0 ? rawDt * 0.1 : rawDt; // 击中瞬间时间近乎冻结
 
     // ---------- 倒计时 ----------
     if (state === 'countdown') {
@@ -550,24 +669,24 @@
     // ---------- 游玩逻辑 ----------
     if (state === 'playing') {
       runTime += dt;
+      // 作弊码超时重置
+      if (cheatTimer > 0) { cheatTimer -= dt; if (cheatTimer <= 0) cheatBuffer = ''; }
       speed = Math.min(C.MAX_SPEED, speed + dt * C.SPEED_RAMP);
       score += speed * dt;
       dist += speed * dt;
       NR.audio.setSpeed(speed); // BGM 随速度自适应
       if (speed >= C.MAX_SPEED) maxSpeedReached = true;
 
-      // 道具计时
-      if (shieldT > 0) {
-        shieldT -= dt;
+      // 道具计时（护盾为持有型不计时；无敌红色 15s）
+      if (magnetT > 0) { magnetT -= dt; updatePowerupUI(); }
+      if (rageT > 0) { rageT -= dt; updatePowerupUI(); }
+      if (hasShield || rageT > 0 || window.__invincible) {
+        shieldMesh.visible = true;
+        shieldMesh.material.color.setHex(rageT > 0 ? 0xef4444 : (window.__invincible ? 0xa855f7 : 0x67e8f9));
         shieldMesh.material.opacity = 0.14 + Math.sin(runTime * 6) * 0.06;
         shieldMesh.rotation.y += dt * 1.5;
-        if (shieldT <= 0) { shieldMesh.visible = false; }
-        updatePowerupUI();
-      }
-      if (magnetT > 0) {
-        magnetT -= dt;
-        if (magnetT <= 0) {}
-        updatePowerupUI();
+      } else {
+        shieldMesh.visible = false;
       }
 
       // 连击窗口
@@ -700,7 +819,7 @@
           const onTop = o.walkable && pBottom >= o.top - 0.2;
           if (!onTop && pBottom < o.top && pTop > o.bottom) {
             // 开发者无敌模式（NR.dev 不存在时自动跳过，发布版不受影响）
-            if (typeof NR.dev !== 'undefined' && NR.dev.invincible) {
+            if ((typeof NR.dev !== 'undefined' && NR.dev.invincible) || window.__invincible) {
               NR.particles.burst(player.position.x, 1, 0, 0x67e8f9, 10, 3.5);
               NR.audio.shieldBreak();
               shakeT = Math.max(shakeT, 0.15);
@@ -708,9 +827,16 @@
               obs.splice(i, 1);
               continue;
             }
-            if (shieldT > 0) {
+            if (rageT > 0) {
+              // 红色无敌：粉碎障碍 +30
+              explodeObstacle(o, 0xef4444, C.RAGE_BONUS);
+              obs.splice(i, 1);
+              continue;
+            }
+            if (hasShield) {
+              // 蓝色护盾：必定抵挡一次死亡并粉碎 +15
               breakShield();
-              NR.spawner.removeObstacle(o);
+              explodeObstacle(o, 0x67e8f9, C.SHIELD_BONUS);
               obs.splice(i, 1);
               continue;
             }
@@ -726,14 +852,14 @@
         c.mesh.position.z += speed * dt;
         c.mesh.rotation.y += dt * 4.5;
 
-        // 磁铁吸引
+        // 磁铁吸引（拉力随速度缩放，高速也能追上角色）
         if (magnetT > 0) {
           const dx = player.position.x - c.mesh.position.x;
           const dy = (playerY + 0.9) - c.mesh.position.y;
           const dz = 0 - c.mesh.position.z;
           const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
           if (d < C.MAGNET_RANGE && d > 0.01) {
-            const pull = (1 - d / C.MAGNET_RANGE) * 26 * dt;
+            const pull = (1 - d / C.MAGNET_RANGE) * (speed * 1.5 + 12) * dt;
             c.mesh.position.x += dx / d * pull;
             c.mesh.position.y += dy / d * pull;
             c.mesh.position.z += dz / d * pull;
@@ -742,8 +868,10 @@
 
         const cz = c.mesh.position.z;
         if (cz > 9) { scene.remove(c.mesh); cns.splice(i, 1); continue; }
-        if (Math.abs(cz) < 0.7 &&
-            Math.abs(c.mesh.position.x - player.position.x) < 0.75 &&
+        const catchZ = magnetT > 0 ? 1.0 : 0.7;
+        const catchX = magnetT > 0 ? 0.95 : 0.75;
+        if (Math.abs(cz) < catchZ &&
+            Math.abs(c.mesh.position.x - player.position.x) < catchX &&
             c.mesh.position.y > playerY - 0.4 && c.mesh.position.y < playerY + curH + 0.45) {
           const cm = c.mesh;
           NR.particles.burst(cm.position.x, cm.position.y, cm.position.z, 0xfde047, 8, 2.5);
@@ -811,8 +939,8 @@
     }
 
     // ---------- 相机 ----------
-    const shakeX = shakeT > 0 ? (Math.random() - 0.5) * shakeT * 0.9 : 0;
-    const shakeY = shakeT > 0 ? (Math.random() - 0.5) * shakeT * 0.9 : 0;
+    const shakeX = shakeT > 0 ? (Math.random() - 0.5) * shakeT * 1.7 : 0;
+    const shakeY = shakeT > 0 ? (Math.random() - 0.5) * shakeT * 1.7 : 0;
     if (shakeT > 0) shakeT -= dt;
 
     if (state === 'start') {
@@ -837,43 +965,6 @@
 
     if (composer) composer.render();
     else renderer.render(scene, camera);
-  }
-
-  // ================= 返回答题 =================
-  function returnToQuiz() {
-    var finalScore = Math.floor(score);
-    var bonus = 0;
-    if (finalScore >= 10000) bonus = 30;
-    else if (finalScore >= 5000) bonus = 15;
-    else if (finalScore >= 2500) bonus = 5;
-
-    // 读取答题状态，增加奖励时间
-    try {
-      var saved = localStorage.getItem('quiz_state');
-      if (saved) {
-        var quizState = JSON.parse(saved);
-        quizState.timeLeft += bonus;
-        localStorage.setItem('quiz_state', JSON.stringify(quizState));
-      }
-    } catch (e) {}
-
-    localStorage.setItem('quiz_returning', 'true');
-    window.location.href = '../quiz.html';
-  }
-
-  // ================= 进入来源感知 =================
-  function applyEntryMode() {
-    var fromQuiz = false;
-    try { fromQuiz = localStorage.getItem('quiz_returning') === 'true'; } catch (e) {}
-    if (fromQuiz) {
-      // 从答题进入：隐藏「再来一局」，显示「返回答题」
-      $('btn-restart').style.display = 'none';
-      $('btn-return-quiz').style.display = '';
-    } else {
-      // 从小游戏模块直接进入：显示「再来一局」，隐藏「返回答题」
-      $('btn-restart').style.display = '';
-      $('btn-return-quiz').style.display = 'none';
-    }
   }
 
   init();

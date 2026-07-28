@@ -222,5 +222,27 @@ NR.textures = (function () {
     return new THREE.CanvasTexture(c);
   }
 
-  return { grid, windows, sun, aurora, hazard, glow, warn, sky, chevron, wood, vine, sandstone, shieldIcon, magnetIcon };
+  /* 红色无敌道具图标（爆裂星形） */
+  function rageIcon() {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    g.translate(64, 64);
+    g.shadowColor = '#ef4444'; g.shadowBlur = 16;
+    const grad = g.createRadialGradient(0, 0, 6, 0, 0, 54);
+    grad.addColorStop(0, '#fde047');
+    grad.addColorStop(0.5, '#f97316');
+    grad.addColorStop(1, '#dc2626');
+    g.fillStyle = grad;
+    g.beginPath();
+    for (let i = 0; i < 16; i++) {
+      const a = (Math.PI / 8) * i;
+      const r = i % 2 === 0 ? 52 : 24;
+      const x = Math.cos(a) * r, y = Math.sin(a) * r;
+      i === 0 ? g.moveTo(x, y) : g.lineTo(x, y);
+    }
+    g.closePath(); g.fill();
+    return new THREE.CanvasTexture(c);
+  }
+
+  return { grid, windows, sun, aurora, hazard, glow, warn, sky, chevron, wood, vine, sandstone, shieldIcon, magnetIcon, rageIcon };
 })();
