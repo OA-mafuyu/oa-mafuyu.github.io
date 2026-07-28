@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>答题中</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      background: #fff;
+      color: #000;
+      min-height: 100vh;
+    }
+
+    /* ========== 顶部信息栏 ========== */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 32px;
+      border-bottom: 2px solid #000;
+      font-size: 16px;
+    }
+
+    .timer {
+      font-weight: 700;
+      font-size: 20px;
+    }
+
+    .timer.warning {
+      color: #e00;
+      animation: blink 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes blink {
+      from { opacity: 1; }
+      to   { opacity: 0.3; }
+    }
+
+    /* ========== 答题区域 ========== */
+    .quiz-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 56px);
+      padding: 40px 20px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .question-text {
+      font-size: 24px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 48px;
+      line-height: 1.6;
+      min-height: 60px;
+    }
+
+    /* ========== 选项按钮 ========== */
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      width: 100%;
+      max-width: 560px;
+    }
+
+    .option-btn {
+      padding: 20px 16px;
+      font-size: 18px;
+      border: 2px solid #000;
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+      transition: all 0.12s ease;
+      text-align: left;
+      position: relative;
+    }
+
+    .option-btn:hover:not(.disabled) {
+      background: #f0f0f0;
+    }
+
+    .option-btn .option-label {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      line-height: 28px;
+      text-align: center;
+      border: 2px solid #000;
+      margin-right: 10px;
+      font-weight: 700;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    .option-btn.disabled {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    .option-btn.correct-flash {
+      background: #000;
+      color: #fff;
+      border-color: #000;
+    }
+
+    .option-btn.wrong-flash {
+      background: #ccc;
+      border-color: #999;
+    }
+
+    /* ========== 答错遮罩层 ========== */
+    .wrong-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(255, 255, 255, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 5vh;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.1s ease;
+      overflow: hidden;
+    }
+
+    .wrong-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .wrong-text {
+      font-size: 48px;
+      font-weight: 900;
+      letter-spacing: 4px;
+    }
+
+    .wrong-image {
+      width: 80px;
+      height: auto;
+      margin-top: 16px;
+      position: relative;
+      z-index: 1;
+      animation: zoomIn 2s ease-out forwards;
+    }
+
+    @keyframes zoomIn {
+      0%   { transform: scale(0); opacity: 0; }
+      5%   { opacity: 1; }
+      100% { transform: scale(30); opacity: 1; }
+    }
+
+    /* ========== 答对提示 ========== */
+    .correct-toast {
+      position: fixed;
+      top: 56px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #000;
+      color: #fff;
+      padding: 12px 32px;
+      font-size: 18px;
+      font-weight: 700;
+      z-index: 800;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+      letter-spacing: 2px;
+    }
+
+    .correct-toast.show {
+      opacity: 1;
+    }
+
+    /* ========== ESC 退出弹窗 ========== */
+    .exit-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .exit-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .exit-box {
+      background: #fff;
+      border: 2px solid #000;
+      padding: 40px 48px;
+      text-align: center;
+      max-width: 380px;
+      width: 90%;
+    }
+
+    .exit-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 32px;
+    }
+
+    .exit-btns {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .exit-btn {
+      padding: 12px 32px;
+      font-size: 16px;
+      border: 2px solid #000;
+      cursor: pointer;
+      transition: all 0.12s ease;
+      background: #fff;
+      color: #000;
+      letter-spacing: 1px;
+    }
+
+    .exit-btn:hover {
+      background: #000;
+      color: #fff;
+    }
+
+    .exit-btn.danger {
+      background: #000;
+      color: #fff;
+    }
+
+    .exit-btn.danger:hover {
+      background: #333;
+    }
+
+    /* ========== 小游戏过渡提示 ========== */
+    .minigame-toast {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(255, 255, 255, 0.97);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 900;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .minigame-toast.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .minigame-toast-text {
+      font-size: 28px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部信息栏 -->
+  <div class="top-bar">
+    <span class="timer" id="timer">剩余时间 01:00</span>
+  </div>
+
+  <!-- 答题主体 -->
+  <div class="quiz-wrapper" id="quizWrapper">
+    <div class="question-text" id="questionText"></div>
+    <div class="options-grid" id="optionsGrid"></div>
+  </div>
+
+  <!-- 答错遮罩 -->
+  <div class="wrong-overlay" id="wrongOverlay">
+    <div class="wrong-text">答错了</div>
+    <img class="wrong-image" src="images/kawaii.png" alt="wrong">
+  </div>
+
+  <!-- 答对提示 -->
+  <div class="correct-toast" id="correctToast">回答正确！</div>
+
+  <!-- 小游戏过渡提示 -->
+  <div class="minigame-toast" id="minigameToast">
+    <div class="minigame-toast-text">
+      即将进入小游戏环节<br>
+      <span style="font-size:18px; font-weight:400; color:#666;">加载中...</span>
+    </div>
+  </div>
+
+  <!-- ESC 退出弹窗 -->
+  <div class="exit-overlay" id="exitOverlay">
+    <div class="exit-box">
+      <div class="exit-title">确定要退出吗？</div>
+      <div class="exit-btns">
+        <button class="exit-btn danger" id="btnExitConfirm">狠心退出</button>
+        <button class="exit-btn" id="btnExitCancel">继续</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 题库 ========== -->
+  <script src="banks.js"></script>
+  <script>
+    // 根据用户选择的题库加载题目
+    var selectedBank = (function () {
+      try { return localStorage.getItem('selected_bank') || '题库1'; }
+      catch (e) { return '题库1'; }
+    })();
+    var questions = (typeof BANKS !== 'undefined' && BANKS[selectedBank]) ? BANKS[selectedBank] : [];
+  </script>
+  <script>
+    (function () {
+      // ========== DOM 引用 ==========
+      const timerEl        = document.getElementById('timer');
+      const questionTextEl = document.getElementById('questionText');
+      const optionsGridEl  = document.getElementById('optionsGrid');
+      const wrongOverlayEl = document.getElementById('wrongOverlay');
+      const correctToastEl = document.getElementById('correctToast');
+      const quizWrapperEl  = document.getElementById('quizWrapper');
+      const minigameToast  = document.getElementById('minigameToast');
+      const exitOverlayEl  = document.getElementById('exitOverlay');
+
+      // ========== 游戏状态 ==========
+      let state, timerInterval, isAnswering = false, isGameOver = false;
+      let gameQuestions = [];
+      let timerPaused = false;
+
+      // ========== 设置 ==========
+      var settings = { music: true, sfx: true, minigame: true };
+      try {
+        var savedSettings = JSON.parse(localStorage.getItem('game_settings') || '{}');
+        settings.music    = (savedSettings.music !== false);
+        settings.sfx      = (savedSettings.sfx !== false);
+        settings.minigame = (savedSettings.minigame !== false);
+      } catch (e) {}
+
+      // ========== 音频系统 ==========
+      var AudioCtx = window.AudioContext || window.webkitAudioContext;
+      var audioCtx = null;
+
+      function ensureAudio() {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+      }
+
+      // --- 背景音乐：舒缓氛围 ---
+      var musicNodes = [];
+      var musicPlaying = false;
+
+      function startMusic() {
+        if (!settings.music || musicPlaying) return;
+        try { ensureAudio(); } catch (e) { return; }
+        musicPlaying = true;
+
+        var now = audioCtx.currentTime;
+        // 舒缓的 Cmaj7 和弦进行：C - G - Am - F，使用柔和的正弦波与三角波叠加
+        var chords = [
+          [261.63, 329.63, 392.00, 493.88],  // Cmaj7
+          [196.00, 293.66, 392.00, 493.88],  // G
+          [220.00, 261.63, 329.63, 440.00],  // Am
+          [174.61, 261.63, 349.23, 440.00],  // F
+        ];
+        var chordDuration = 6; // 每个和弦持续 6 秒
+
+        function scheduleChord(startIdx, startTime) {
+          for (var rep = 0; rep < 30; rep++) { // 足够循环到游戏结束
+            var chord = chords[(startIdx + rep) % chords.length];
+            chord.forEach(function (freq) {
+              var osc = audioCtx.createOscillator();
+              var gain = audioCtx.createGain();
+              var filter = audioCtx.createBiquadFilter();
+
+              osc.type = freq > 300 ? 'sine' : 'triangle';
+              osc.frequency.value = freq;
+
+              filter.type = 'lowpass';
+              filter.frequency.value = 800;
+              filter.Q.value = 0.5;
+
+              gain.gain.setValueAtTime(0, startTime + rep * chordDuration);
+              gain.gain.linearRampToValueAtTime(0.025, startTime + rep * chordDuration + 1.2);
+              gain.gain.setValueAtTime(0.025, startTime + rep * chordDuration + chordDuration - 1.2);
+              gain.gain.linearRampToValueAtTime(0, startTime + rep * chordDuration + chordDuration);
+
+              osc.connect(filter);
+              filter.connect(gain);
+              gain.connect(audioCtx.destination);
+
+              osc.start(startTime + rep * chordDuration);
+              osc.stop(startTime + rep * chordDuration + chordDuration);
+              musicNodes.push(osc);
+            });
+          }
+        }
+
+        scheduleChord(0, now);
+        scheduleChord(2, now + 0.08); // 略微偏移第二层
+      }
+
+      function stopMusic() {
+        musicPlaying = false;
+        musicNodes.forEach(function (n) {
+          try { n.stop(); } catch (e) {}
+        });
+        musicNodes = [];
+      }
+
+      // --- 音效 ---
+      function playCorrectSfx() {
+        if (!settings.sfx) return;
+        try { ensureAudio(); } catch (e) { return; }
+        var now = audioCtx.currentTime;
+        // 明亮的上升音
+        [523.25, 659.25, 783.99].forEach(function (freq, i) {
+          var osc = audioCtx.createOscillator();
+          var gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.12, now + i * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.25);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + i * 0.08);
+          osc.stop(now + i * 0.08 + 0.3);
+        });
+      }
+
+      function playWrongSfx() {
+        if (!settings.sfx) return;
+        try { ensureAudio(); } catch (e) { return; }
+        var now = audioCtx.currentTime;
+        // 低沉的下行音
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.linearRampToValueAtTime(120, now + 0.35);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.5);
+      }
+
+      function shuffle(arr) {
+        var a = arr.slice();
+        for (var i = a.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+        }
+        return a;
+      }
+
+      // ---------- 初始化 ----------
+      function init() {
+        try {
+          // 确认题库已加载
+          if (typeof questions === 'undefined' || !questions || questions.length === 0) {
+            document.body.innerHTML = '<div style="text-align:center;padding:80px 20px;font-size:20px;">'
+              + '题库加载失败，请检查 questions.js 文件。<br><br>'
+              + '<a href="index.html" style="color:#000;">返回首页</a></div>';
+            return;
+          }
+
+          // 建立 ID 索引
+          var questionsById = {};
+          questions.forEach(function(q) { questionsById[q.id] = q; });
+
+          // 检测是否从小游戏返回
+          var returning = localStorage.getItem('quiz_returning') === 'true';
+
+          if (returning) {
+            // 从小游戏返回：恢复状态 + 同步时间
+            localStorage.removeItem('quiz_returning');
+            var saved = localStorage.getItem('quiz_state');
+            if (!saved) { goToGameOver(); return; }
+            state = JSON.parse(saved);
+            if (!state) { goToGameOver(); return; }
+
+            // 恢复题目顺序
+            if (state.questionOrder && state.questionOrder.length > 0) {
+              gameQuestions = state.questionOrder.map(function(id) { return questionsById[id]; }).filter(Boolean);
+            }
+            if (gameQuestions.length === 0) {
+              gameQuestions = questions.slice();
+            }
+
+            if (state.currentQuestionIndex >= gameQuestions.length) {
+              goToGameOver();
+              return;
+            }
+          } else {
+            // 新游戏：从首页传入的状态
+            var saved = localStorage.getItem('quiz_state');
+            if (!saved) {
+              window.location.href = 'index.html';
+              return;
+            }
+            state = JSON.parse(saved);
+            if (!state) {
+              window.location.href = 'index.html';
+              return;
+            }
+
+            // 随机打乱题目顺序
+            gameQuestions = shuffle(questions);
+            state.questionOrder = gameQuestions.map(function(q) { return q.id; });
+            // 保存更新后的 state（含 questionOrder）
+            localStorage.setItem('quiz_state', JSON.stringify(state));
+          }
+
+          startTimer();
+          renderQuestion();
+
+          // 首次用户交互后启动音乐
+          document.addEventListener('click', function unlockAudio() {
+            startMusic();
+          }, { once: true });
+          document.addEventListener('keydown', function unlockAudioKey() {
+            startMusic();
+          }, { once: true });
+        } catch (e) {
+          document.body.innerHTML = '<div style="text-align:center;padding:80px 20px;font-size:20px;">'
+            + '游戏初始化出错：' + e.message + '<br><br>'
+            + '<a href="index.html" style="color:#000;">返回首页</a></div>';
+        }
+      }
+
+      // ---------- 计时器 ----------
+      function startTimer() {
+        clearInterval(timerInterval);
+        timerPaused = false;
+        updateTimerDisplay();
+
+        timerInterval = setInterval(function () {
+          if (isGameOver || timerPaused) return;
+
+          state.timeLeft--;
+          updateTimerDisplay();
+
+          if (state.timeLeft <= 0) {
+            state.timeLeft = 0;
+            endGame();
+          }
+        }, 1000);
+      }
+
+      function pauseTimer() {
+        timerPaused = true;
+      }
+
+      function resumeTimer() {
+        timerPaused = false;
+      }
+
+      function updateTimerDisplay() {
+        const m = Math.floor(state.timeLeft / 60);
+        const s = state.timeLeft % 60;
+        timerEl.textContent = '剩余时间 ' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+
+        // 15 秒以下警告
+        if (state.timeLeft <= 15) {
+          timerEl.classList.add('warning');
+        } else {
+          timerEl.classList.remove('warning');
+        }
+      }
+
+      // ---------- 渲染题目 ----------
+      function renderQuestion() {
+        if (state.currentQuestionIndex >= gameQuestions.length) {
+          endGame();
+          return;
+        }
+
+        const q = gameQuestions[state.currentQuestionIndex];
+        questionTextEl.textContent = q.question;
+
+        // 生成选项按钮
+        optionsGridEl.innerHTML = '';
+        ['A', 'B', 'C', 'D'].forEach(function (letter) {
+          var btn = document.createElement('button');
+          btn.className = 'option-btn';
+          btn.innerHTML = '<span class="option-label">' + letter + '</span>' + q.options[letter];
+          btn.addEventListener('click', function () {
+            handleAnswer(letter, btn);
+          });
+          optionsGridEl.appendChild(btn);
+        });
+
+        isAnswering = true;
+      }
+
+      // ---------- 处理答题 ----------
+      function handleAnswer(userAnswer, clickedBtn) {
+        if (!isAnswering || isGameOver) return;
+        isAnswering = false;
+
+        const q = gameQuestions[state.currentQuestionIndex];
+        const isCorrect = (userAnswer === q.answer);
+
+        // 禁用所有按钮
+        var allBtns = optionsGridEl.querySelectorAll('.option-btn');
+        allBtns.forEach(function (b) { b.classList.add('disabled'); });
+
+        state.answeredCount++;
+
+        if (isCorrect) {
+          // 正确
+          playCorrectSfx();
+          clickedBtn.classList.add('correct-flash');
+          state.correctQuestions.push(q.id);
+
+          showCorrectToast();
+
+          setTimeout(function () {
+            afterAnswer();
+          }, 400);
+
+        } else {
+          // 错误
+          playWrongSfx();
+          clickedBtn.classList.add('wrong-flash');
+
+          // 标记正确答案
+          allBtns.forEach(function (b) {
+            if (b.querySelector('.option-label').textContent === q.answer) {
+              b.classList.add('correct-flash');
+            }
+          });
+
+          state.wrongQuestions.push({
+            questionId: q.id,
+            question: q.question,
+            options: q.options,
+            correctAnswer: q.answer,
+            userAnswer: userAnswer
+          });
+
+          // 显示答错遮罩 3 秒
+          showWrongOverlay(function () {
+            afterAnswer();
+          });
+        }
+      }
+
+      // ---------- 答对提示 ----------
+      function showCorrectToast() {
+        correctToastEl.classList.add('show');
+        setTimeout(function () {
+          correctToastEl.classList.remove('show');
+        }, 600);
+      }
+
+      // ---------- 答错动画 ----------
+      function showWrongOverlay(callback) {
+        wrongOverlayEl.classList.add('active');
+
+        // 重置动画（通过重新插入元素）
+        var imgEl = wrongOverlayEl.querySelector('.wrong-image');
+        var parent = imgEl.parentNode;
+        var clone = imgEl.cloneNode(true);
+        parent.replaceChild(clone, imgEl);
+
+        // 2 秒后隐藏
+        setTimeout(function () {
+          wrongOverlayEl.classList.remove('active');
+          if (callback) callback();
+        }, 2000);
+      }
+
+      // ---------- 答完一道题后 ----------
+      function afterAnswer() {
+        if (isGameOver) return;
+
+        state.currentQuestionIndex++;
+
+        // 保存状态
+        localStorage.setItem('quiz_state', JSON.stringify(state));
+
+        // 检查是否需要触发小游戏（每 5 题，且设置中开启）
+        if (settings.minigame && state.answeredCount > 0 && state.answeredCount % 5 === 0 && !isGameOver) {
+          triggerMinigame();
+          return;
+        }
+
+        // 检查是否所有题目答完
+        if (state.currentQuestionIndex >= gameQuestions.length) {
+          endGame();
+          return;
+        }
+
+        renderQuestion();
+      }
+
+      // ---------- 触发小游戏 ----------
+      function triggerMinigame() {
+        clearInterval(timerInterval);
+        localStorage.setItem('quiz_state', JSON.stringify(state));
+
+        // 短暂提示后跳转
+        minigameToast.classList.add('active');
+        setTimeout(function () {
+          window.location.href = 'minigame1/index.html';
+        }, 1200);
+      }
+
+      // ---------- 结束游戏 ----------
+      function endGame() {
+        if (isGameOver) return;
+        isGameOver = true;
+        clearInterval(timerInterval);
+        timerEl.classList.remove('warning');
+        stopMusic();
+
+        // 保存结算数据
+        var results = {
+          correctCount: state.correctQuestions.length,
+          totalAnswered: state.answeredCount,
+          accuracy: state.answeredCount > 0
+            ? (state.correctQuestions.length / state.answeredCount * 100).toFixed(1)
+            : '0.0',
+          correctList: state.correctQuestions,
+          wrongList: state.wrongQuestions,
+          totalQuestions: gameQuestions.length,
+          timeLeft: state.timeLeft
+        };
+        localStorage.setItem('quiz_results', JSON.stringify(results));
+        localStorage.removeItem('quiz_state');
+        localStorage.removeItem('quiz_returning');
+
+        setTimeout(function () {
+          window.location.href = 'gameover.html';
+        }, 300);
+      }
+
+      function goToGameOver() {
+        endGame();
+      }
+
+      // ---------- ESC 退出弹窗 ----------
+      function showExitModal() {
+        if (isGameOver) return;
+        pauseTimer();
+        exitOverlayEl.classList.add('active');
+      }
+
+      function hideExitModal() {
+        resumeTimer();
+        exitOverlayEl.classList.remove('active');
+      }
+
+      function confirmExit() {
+        endGame();
+      }
+
+      // ESC 键监听
+      document.addEventListener('keydown', function (e) {
+        if (e.code === 'Escape' && !isGameOver) {
+          if (exitOverlayEl.classList.contains('active')) {
+            hideExitModal();
+          } else {
+            showExitModal();
+          }
+        }
+      });
+
+      // 退出弹窗按钮绑定
+      document.getElementById('btnExitConfirm').addEventListener('click', confirmExit);
+      document.getElementById('btnExitCancel').addEventListener('click', hideExitModal);
+
+      // ---------- 启动 ----------
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+
+</body>
+</html>

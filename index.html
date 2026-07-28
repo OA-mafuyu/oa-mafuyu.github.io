@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>梗知识答题——但是缝合版</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      background: #fff;
+      color: #000;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ========== 主容器 ========== */
+    .home-container {
+      text-align: center;
+      max-width: 600px;
+      padding: 40px 20px;
+    }
+
+    /* ========== 大标题 ========== */
+    .main-title {
+      font-size: 48px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      margin-bottom: 60px;
+      line-height: 1.3;
+    }
+
+    /* ========== 按钮组 ========== */
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .btn {
+      width: 280px;
+      padding: 16px 0;
+      font-size: 18px;
+      border: 2px solid #000;
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      letter-spacing: 2px;
+    }
+
+    .btn:hover {
+      background: #000;
+      color: #fff;
+    }
+
+    .btn-primary {
+      background: #000;
+      color: #fff;
+      font-weight: 700;
+      font-size: 20px;
+    }
+
+    .btn-primary:hover {
+      background: #333;
+      border-color: #333;
+    }
+
+    /* ========== 选择面板 ========== */
+    .select-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .select-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .select-box {
+      background: #fff;
+      border: 2px solid #000;
+      padding: 36px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .select-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+
+    .select-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .select-item {
+      padding: 14px 0;
+      font-size: 16px;
+      border: 2px solid #000;
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+      transition: all 0.12s ease;
+      letter-spacing: 1px;
+    }
+
+    .select-item:hover {
+      background: #000;
+      color: #fff;
+    }
+
+    .select-item.selected {
+      background: #000;
+      color: #fff;
+    }
+
+    .select-close {
+      padding: 10px 28px;
+      font-size: 14px;
+      border: 1px solid #999;
+      background: #fff;
+      color: #666;
+      cursor: pointer;
+    }
+
+    .select-close:hover {
+      border-color: #000;
+      color: #000;
+    }
+
+    .select-hint {
+      font-size: 13px;
+      color: #999;
+      margin-top: 12px;
+    }
+
+
+  </style>
+</head>
+<body>
+
+  <div class="home-container">
+    <!-- 大标题 -->
+    <h1 class="main-title">梗知识答题——但是缝合版</h1>
+
+    <!-- 主导航按钮 -->
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="showStartGameSub()">开始游戏</button>
+      <button class="btn" onclick="showAchievements()">成就</button>
+      <button class="btn" onclick="goTo('instructions.html')">游戏说明</button>
+      <button class="btn" onclick="showOtherSub()">其他</button>
+    </div>
+  </div>
+
+  <!-- 「开始游戏」子面板 -->
+  <div class="select-overlay" id="startGameSub">
+    <div class="select-box">
+      <div class="select-title">选择模式</div>
+      <div class="select-list">
+        <button class="select-item" onclick="startQuizFlow()">答题</button>
+        <button class="select-item" onclick="startMinigameFlow()">小游戏</button>
+      </div>
+      <button class="select-close" onclick="closePanel('startGameSub')">关闭</button>
+    </div>
+  </div>
+
+  <!-- 「其他」子面板 -->
+  <div class="select-overlay" id="otherSub">
+    <div class="select-box">
+      <div class="select-title">其他</div>
+      <div class="select-list">
+        <button class="select-item" onclick="closePanel('otherSub'); goTo('settings.html')">游戏设置</button>
+        <button class="select-item" onclick="closePanel('otherSub'); goTo('contact.html')">联系我们</button>
+      </div>
+      <button class="select-close" onclick="closePanel('otherSub')">关闭</button>
+    </div>
+  </div>
+
+  <!-- 成就面板 -->
+  <div class="select-overlay" id="achievementsPanel">
+    <div class="select-box">
+      <div class="select-title">成就</div>
+      <div class="select-list" id="achContent">
+        <div style="padding:20px;color:#999;font-size:14px;">（成就系统筹备中，敬请期待）</div>
+      </div>
+      <button class="select-close" onclick="closePanel('achievementsPanel')">关闭</button>
+    </div>
+  </div>
+
+  <!-- 选择题库面板 -->
+  <div class="select-overlay" id="bankOverlay">
+    <div class="select-box">
+      <div class="select-title">选择题库</div>
+      <div class="select-list" id="bankList"></div>
+      <button class="select-close" onclick="confirmBankAndStart()">开始答题</button>
+    </div>
+  </div>
+
+  <!-- 小游戏选择面板 -->
+  <div class="select-overlay" id="minigameOverlay">
+    <div class="select-box">
+      <div class="select-title">选择小游戏</div>
+      <div class="select-list" id="minigameList"></div>
+      <button class="select-close" onclick="closePanel('minigameOverlay')">关闭</button>
+    </div>
+  </div>
+
+  <script src="banks.js"></script>
+  <script>
+    // ========== 通用面板 ==========
+    function showPanel(id) {
+      document.getElementById(id).classList.add('active');
+    }
+    function closePanel(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    // ========== 「开始游戏」子菜单 ==========
+    function showStartGameSub() {
+      showPanel('startGameSub');
+    }
+
+    function startQuizFlow() {
+      closePanel('startGameSub');
+      showBankSelect();
+    }
+
+    function startMinigameFlow() {
+      closePanel('startGameSub');
+      showMinigameSelect();
+    }
+
+    // ========== 「其他」子菜单 ==========
+    function showOtherSub() {
+      showPanel('otherSub');
+    }
+
+    // ========== 成就面板 ==========
+    function showAchievements() {
+      showPanel('achievementsPanel');
+    }
+
+    // 为所有子面板、题库面板、小游戏面板、成就面板绑定遮罩点击关闭
+    ['startGameSub', 'otherSub', 'achievementsPanel', 'bankOverlay', 'minigameOverlay'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('click', function (e) {
+          if (e.target === this) closePanel(id);
+        });
+      }
+    });
+
+    // ========== 题库选择 ==========
+    var currentBank = (function () {
+      try { return localStorage.getItem('selected_bank') || '题库1'; }
+      catch (e) { return '题库1'; }
+    })();
+
+    function showBankSelect() {
+      var bankNames = [];
+      if (typeof BANKS !== 'undefined') {
+        bankNames = Object.keys(BANKS);
+      }
+      if (bankNames.length === 0) {
+        bankNames = ['题库1'];
+      }
+
+      var listHtml = '';
+      for (var i = 0; i < bankNames.length; i++) {
+        var name = bankNames[i];
+        var isCurrent = (name === currentBank);
+        listHtml += '<button class="select-item' + (isCurrent ? ' selected' : '') + '" onclick="selectBank(\'' + name + '\')">' + name + '</button>';
+      }
+      document.getElementById('bankList').innerHTML = listHtml;
+      showPanel('bankOverlay');
+    }
+
+    function selectBank(name) {
+      currentBank = name;
+      try { localStorage.setItem('selected_bank', name); } catch (e) {}
+      showBankSelect(); // 刷新面板高亮
+    }
+
+    function confirmBankAndStart() {
+      closePanel('bankOverlay');
+      doStartGame();
+    }
+
+    // ========== 小游戏选择 ==========
+    var MINIGAMES = [
+      { id: 'minigame1', name: '霓虹跑酷', path: 'minigame1/index.html' }
+    ];
+
+    function showMinigameSelect() {
+      var listHtml = '';
+      for (var i = 0; i < MINIGAMES.length; i++) {
+        var mg = MINIGAMES[i];
+        listHtml += '<button class="select-item" onclick="launchMinigame(\'' + mg.path + '\')">' + mg.name + '</button>';
+      }
+      document.getElementById('minigameList').innerHTML = listHtml;
+      showPanel('minigameOverlay');
+    }
+
+    function launchMinigame(path) {
+      localStorage.removeItem('quiz_returning');
+      window.location.href = path;
+    }
+
+    // ========== 开始游戏 ==========
+    function doStartGame() {
+      try {
+        localStorage.removeItem('quiz_state');
+        localStorage.removeItem('quiz_returning');
+        localStorage.removeItem('quiz_results');
+
+        var gameState = {
+          currentQuestionIndex: 0,
+          correctQuestions: [],
+          wrongQuestions: [],
+          timeLeft: 60,
+          answeredCount: 0
+        };
+        localStorage.setItem('quiz_state', JSON.stringify(gameState));
+        window.location.href = 'quiz.html';
+      } catch (e) {
+        alert('启动游戏失败：' + e.message + '\n请尝试用 Chrome 或 Edge 浏览器打开。');
+      }
+    }
+
+    function goTo(url) {
+      window.location.href = url;
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>游戏设置</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      background: #fff; color: #000; min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .container {
+      max-width: 500px; width: 100%; padding: 60px 20px;
+    }
+    h1 {
+      font-size: 32px; font-weight: 900; letter-spacing: 4px;
+      text-align: center; margin-bottom: 48px;
+    }
+    .setting-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 18px 0; border-bottom: 1px solid #e0e0e0;
+    }
+    .setting-label {
+      font-size: 18px; font-weight: 700; letter-spacing: 1px;
+    }
+    .toggle {
+      position: relative; width: 52px; height: 28px;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0; cursor: pointer;
+      background: #ccc; border-radius: 999px; transition: .2s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute; left: 3px; top: 3px;
+      width: 22px; height: 22px;
+      background: #fff; border-radius: 50%; transition: .2s;
+    }
+    .toggle input:checked + .toggle-slider { background: #000; }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(24px); }
+    .back-link {
+      display: block; text-align: center; margin-top: 48px;
+      color: #000; font-size: 15px; letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>游戏设置</h1>
+
+    <div class="setting-row">
+      <span class="setting-label">音乐</span>
+      <label class="toggle">
+        <input type="checkbox" id="toggleMusic" onchange="saveSettings()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-row">
+      <span class="setting-label">音效</span>
+      <label class="toggle">
+        <input type="checkbox" id="toggleSfx" onchange="saveSettings()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-row">
+      <span class="setting-label">小游戏</span>
+      <label class="toggle">
+        <input type="checkbox" id="toggleMinigame" onchange="saveSettings()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <a class="back-link" href="index.html">← 返回首页</a>
+  </div>
+
+  <script>
+    function loadSettings() {
+      try {
+        var s = JSON.parse(localStorage.getItem('game_settings') || '{}');
+        document.getElementById('toggleMusic').checked    = (s.music !== false);
+        document.getElementById('toggleSfx').checked      = (s.sfx !== false);
+        document.getElementById('toggleMinigame').checked  = (s.minigame !== false);
+      } catch (e) {
+        document.getElementById('toggleMusic').checked    = true;
+        document.getElementById('toggleSfx').checked      = true;
+        document.getElementById('toggleMinigame').checked  = true;
+      }
+    }
+
+    function saveSettings() {
+      var settings = {
+        music:    document.getElementById('toggleMusic').checked,
+        sfx:      document.getElementById('toggleSfx').checked,
+        minigame: document.getElementById('toggleMinigame').checked
+      };
+      try { localStorage.setItem('game_settings', JSON.stringify(settings)); } catch (e) {}
+    }
+
+    loadSettings();
+  </script>
+</body>
+</html>

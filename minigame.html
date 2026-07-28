@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小游戏</title>
+  <style>
+    body {
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      background: #fff;
+      color: #000;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+    }
+    .container {
+      text-align: center;
+      max-width: 500px;
+      padding: 40px 20px;
+    }
+    h1 { font-size: 32px; margin-bottom: 20px; }
+    p { font-size: 16px; color: #666; line-height: 1.8; }
+    .info-box {
+      border: 2px solid #000;
+      padding: 20px;
+      margin: 30px 0;
+    }
+    .btn {
+      padding: 14px 40px;
+      font-size: 16px;
+      border: 2px solid #000;
+      background: #000;
+      color: #fff;
+      cursor: pointer;
+    }
+    .btn:hover { background: #333; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🎮 小游戏</h1>
+    <p>此页面由其他小组成员实现</p>
+
+    <div class="info-box">
+      <p id="time-info">加载中...</p>
+    </div>
+
+    <!-- 临时返回按钮，后续替换为小游戏逻辑 -->
+    <button class="btn" onclick="returnToQuiz()">返回答题（临时）</button>
+  </div>
+
+  <script>
+    /**
+     * ============================================
+     * 小游戏与答题页面的数据接口约定
+     * ============================================
+     *
+     * 1. 读取游戏状态：
+     *    const state = JSON.parse(localStorage.getItem('quiz_state'));
+     *    其中 state.timeLeft 是当前剩余时间（秒）
+     *
+     * 2. 小游戏结束后，更新剩余时间：
+     *    state.timeLeft += 奖励秒数;  // 根据玩家表现计算
+     *    localStorage.setItem('quiz_state', JSON.stringify(state));
+     *
+     * 3. 返回答题页：
+     *    window.location.href = 'quiz.html';
+     *
+     * 答题页会自动检测并恢复状态，读取更新后的 timeLeft。
+     * ============================================
+     */
+
+    // 读取当前游戏状态
+    const gameState = JSON.parse(localStorage.getItem('quiz_state') || '{}');
+    const timeLeft = gameState.timeLeft || 0;
+    document.getElementById('time-info').textContent =
+      '剩余时间: ' + Math.floor(timeLeft / 60) + '分' + (timeLeft % 60) + '秒';
+
+    function returnToQuiz() {
+      // 临时：默认加 10 秒奖励
+      gameState.timeLeft += 10;
+      localStorage.setItem('quiz_state', JSON.stringify(gameState));
+      localStorage.setItem('quiz_returning', 'true');
+      window.location.href = 'quiz.html';
+    }
+  </script>
+
+</body>
+</html>

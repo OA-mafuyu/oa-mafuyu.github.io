@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>游戏结束</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      background: #fff;
+      color: #000;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 640px;
+      width: 100%;
+    }
+
+    /* ========== 标题 ========== */
+    .gameover-title {
+      font-size: 36px;
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 40px;
+      letter-spacing: 2px;
+    }
+
+    /* ========== 数据概览卡片 ========== */
+    .stats-cards {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .stat-card {
+      flex: 1;
+      border: 2px solid #000;
+      padding: 20px 16px;
+      text-align: center;
+    }
+
+    .stat-card .stat-number {
+      font-size: 36px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .stat-card .stat-label {
+      font-size: 14px;
+      color: #666;
+      margin-top: 6px;
+    }
+
+    /* ========== 列表区域 ========== */
+    .section {
+      margin-bottom: 32px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #000;
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 6px 14px;
+      border: 1px solid #000;
+      font-size: 14px;
+      background: #fff;
+      color: #000;
+      cursor: default;
+    }
+
+    .tag.correct {
+      background: #000;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .tag.correct:hover {
+      background: #333;
+    }
+
+    .tag.wrong {
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .tag.wrong:hover {
+      background: #000;
+      color: #fff;
+    }
+
+    .empty-hint {
+      color: #999;
+      font-size: 14px;
+      font-style: italic;
+    }
+
+    /* ========== 弹窗 ========== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      background: #fff;
+      border: 2px solid #000;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 32px;
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 16px;
+      font-size: 24px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: #000;
+      line-height: 1;
+    }
+
+    .modal-question {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .modal-option {
+      padding: 10px 14px;
+      margin-bottom: 6px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+    }
+
+    .modal-option.correct-answer {
+      border-color: #000;
+      background: #e8e8e8;
+      font-weight: 700;
+    }
+
+    .modal-option.user-answer {
+      border-color: #999;
+      background: #f5f5f5;
+      text-decoration: line-through;
+    }
+
+    .modal-option-label {
+      display: inline-block;
+      width: 24px;
+      font-weight: 700;
+    }
+
+    .modal-summary {
+      margin-top: 16px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    /* ========== 返回按钮 ========== */
+    .btn-back {
+      display: block;
+      margin: 40px auto 0;
+      padding: 14px 48px;
+      font-size: 16px;
+      border: 2px solid #000;
+      background: #000;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .btn-back:hover {
+      background: #333;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- 标题 -->
+    <h1 class="gameover-title" id="gameoverTitle">游戏结束</h1>
+
+    <!-- 数据卡片 -->
+    <div class="stats-cards">
+      <div class="stat-card">
+        <div class="stat-number" id="correctCount">0</div>
+        <div class="stat-label">答对题数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="totalAnswered">0</div>
+        <div class="stat-label">总答题数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="accuracy">0%</div>
+        <div class="stat-label">正确率</div>
+      </div>
+    </div>
+
+    <!-- 答对题目序号 -->
+    <div class="section">
+      <div class="section-title">答对题目序号（点击查看详情）</div>
+      <div class="tag-list" id="correctTagList"></div>
+    </div>
+
+    <!-- 答错题目序号 -->
+    <div class="section">
+      <div class="section-title">答错题目序号（点击查看详情）</div>
+      <div class="tag-list" id="wrongTagList"></div>
+    </div>
+
+    <!-- 返回按钮 -->
+    <button class="btn-back" onclick="window.location.href='index.html'">返回首页</button>
+  </div>
+
+  <!-- 弹窗层 -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box" id="modalBox">
+      <button class="modal-close" id="modalClose">&times;</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <!-- ========== 题库 ========== -->
+  <script src="banks.js"></script>
+  <script>
+    var selectedBank = (function () {
+      try { return localStorage.getItem('selected_bank') || '题库1'; }
+      catch (e) { return '题库1'; }
+    })();
+    var questions = (typeof BANKS !== 'undefined' && BANKS[selectedBank]) ? BANKS[selectedBank] : [];
+  </script>
+  <script>
+    (function () {
+      // 读取结算数据
+      var results = JSON.parse(localStorage.getItem('quiz_results'));
+
+      // 无数据时展示默认状态
+      if (!results) {
+        document.getElementById('gameoverTitle').textContent = '暂无游戏记录';
+        return;
+      }
+
+      // 填充数据卡片
+      document.getElementById('correctCount').textContent = results.correctCount;
+      document.getElementById('totalAnswered').textContent = results.totalAnswered;
+      document.getElementById('accuracy').textContent = results.accuracy + '%';
+
+      // 建立题目 ID 索引
+      var questionsById = {};
+      if (typeof questions !== 'undefined') {
+        questions.forEach(function(q) { questionsById[q.id] = q; });
+      }
+
+      // 答对题目序号（可点击）
+      var correctList = results.correctList || [];
+      var correctTagList = document.getElementById('correctTagList');
+      if (correctList.length === 0) {
+        correctTagList.innerHTML = '<span class="empty-hint">无</span>';
+      } else {
+        correctList.forEach(function (id) {
+          var tag = document.createElement('span');
+          tag.className = 'tag correct';
+          tag.textContent = '第 ' + id + ' 题';
+          tag.addEventListener('click', function () {
+            var q = questionsById[id];
+            if (q) {
+              showCorrectDetail(q);
+            }
+          });
+          correctTagList.appendChild(tag);
+        });
+      }
+
+      // 答错题目序号（可点击）
+      var wrongList = results.wrongList || [];
+      var wrongTagList = document.getElementById('wrongTagList');
+      if (wrongList.length === 0) {
+        wrongTagList.innerHTML = '<span class="empty-hint">无</span>';
+      } else {
+        wrongList.forEach(function (item, index) {
+          var tag = document.createElement('span');
+          tag.className = 'tag wrong';
+          tag.textContent = '第 ' + item.questionId + ' 题';
+          tag.addEventListener('click', function () {
+            showQuestionDetail(item);
+          });
+          wrongTagList.appendChild(tag);
+        });
+      }
+
+      // ========== 弹窗逻辑 ==========
+      var modalOverlay = document.getElementById('modalOverlay');
+      var modalContent = document.getElementById('modalContent');
+      var modalClose   = document.getElementById('modalClose');
+
+      function showQuestionDetail(item) {
+        var html = '<div class="modal-question">' + item.question + '</div>';
+
+        // 渲染所有选项
+        ['A', 'B', 'C', 'D'].forEach(function (letter) {
+          var optionClass = 'modal-option';
+          var label = '';
+
+          if (letter === item.correctAnswer && letter === item.userAnswer) {
+            // 既是正确答案又是用户答案（不应该出现在错题中，但做防御）
+            optionClass += ' correct-answer';
+            label = '<span style="color:#000;">（你的答案，正确）</span>';
+          } else if (letter === item.correctAnswer) {
+            optionClass += ' correct-answer';
+            label = '<span style="color:#000;">（正确答案）</span>';
+          } else if (letter === item.userAnswer) {
+            optionClass += ' user-answer';
+            label = '<span style="color:#999;">（你的答案）</span>';
+          }
+
+          html += '<div class="' + optionClass + '">' +
+                  '<span class="modal-option-label">' + letter + '.</span>' +
+                  item.options[letter] + ' ' + label +
+                  '</div>';
+        });
+
+        html += '<div class="modal-summary">正确答案: ' + item.correctAnswer +
+                ' | 你的选择: ' + item.userAnswer + '</div>';
+
+        modalContent.innerHTML = html;
+        modalOverlay.classList.add('active');
+      }
+
+      function showCorrectDetail(q) {
+        var html = '<div class="modal-question">' + q.question + '</div>';
+
+        ['A', 'B', 'C', 'D'].forEach(function (letter) {
+          var optionClass = 'modal-option';
+          if (letter === q.answer) {
+            optionClass += ' correct-answer';
+          }
+          html += '<div class="' + optionClass + '">' +
+                  '<span class="modal-option-label">' + letter + '.</span>' +
+                  q.options[letter] +
+                  (letter === q.answer ? ' <span style="color:#000;">（正确答案）</span>' : '') +
+                  '</div>';
+        });
+
+        html += '<div class="modal-summary">正确答案: ' + q.answer + ' | 本题回答正确</div>';
+
+        modalContent.innerHTML = html;
+        modalOverlay.classList.add('active');
+      }
+
+      function closeModal() {
+        modalOverlay.classList.remove('active');
+      }
+
+      modalClose.addEventListener('click', closeModal);
+      modalOverlay.addEventListener('click', function (e) {
+        if (e.target === modalOverlay) closeModal();
+      });
+
+      // 清理 localStorage（已展示完毕）
+      // localStorage.removeItem('quiz_results');  // 保留以便刷新查看，点击开始新游戏时覆盖
+    })();
+  </script>
+
+</body>
+</html>
