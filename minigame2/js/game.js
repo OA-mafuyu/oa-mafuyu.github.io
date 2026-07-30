@@ -35,9 +35,9 @@ const CHEAT_TIMEOUT = 2.0;
 
 function calcBonusTime(s) {
   let bonus = 0;
-  if (s >= 10000) bonus = 15;
-  else if (s >= 5000) bonus = 10;
-  else if (s >= 2500) bonus = 5;
+  if (s >= 5000) bonus = 15;
+  else if (s >= 2000) bonus = 10;
+  else if (s >= 1000) bonus = 5;
   return bonus;
 }
 
@@ -156,15 +156,18 @@ export function gameOver() {
   ui.finalGems.textContent = gems;
   ui.finalDist.textContent = finalDist + 'm';
   ui.newRecord.classList.toggle('hidden', !isRecord);
-  // 根据入口显示不同按钮
+  // 统一返回按钮：fromQuiz 时全部显示"返回答题"，否则显示"返回主页"
   const bonus = calcBonusTime(finalScore);
   if (fromQuiz) {
     ui.retryBtn.style.display = 'none';
     ui.returnQuizBtn.style.display = '';
     ui.returnQuizBtn.textContent = '返回答题（+' + bonus + '秒）';
+    ui.homeBtn.style.display = 'none';
   } else {
     ui.retryBtn.style.display = '';
     ui.returnQuizBtn.style.display = 'none';
+    ui.homeBtn.style.display = '';
+    ui.homeBtn.textContent = '返回主页';
   }
 
   ui.exitConfirm.classList.add('hidden');
@@ -282,10 +285,15 @@ export function wireUI() {
     setMusic(!isMusicOn()); sfx.click();
   };
 
-  // 返回答题主页
+  // 返回答题 / 返回主页（统一入口）
+  ui.homeQuizBtn.textContent = fromQuiz ? '返回答题页面' : '返回主页';
   ui.homeQuizBtn.onclick = () => {
     sfx.click();
-    window.location.href = '../quiz.html';
+    if (fromQuiz) {
+      window.location.href = '../quiz.html';
+    } else {
+      window.location.href = '../index.html';
+    }
   };
 
   // 退出确认弹窗 → 走 gameOver 结算分数
