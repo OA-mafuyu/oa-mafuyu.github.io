@@ -152,7 +152,7 @@
     .wrong-image {
       width: 80px;
       height: auto;
-      margin-top: 16px;
+      margin-top:300px;
       position: relative;
       z-index: 1;
       animation: zoomIn 2s ease-out forwards;
@@ -162,6 +162,107 @@
       0%   { transform: scale(0); opacity: 0; }
       5%   { opacity: 1; }
       100% { transform: scale(30); opacity: 1; }
+    }
+
+    /* 惊吓模式动画：匀速放大（linear），持续时间由 animation-duration 控制 */
+    @keyframes zoomInScare {
+      0%   { transform: scale(0); opacity: 0; }
+      3%   { opacity: 1; }
+      100% { transform: scale(100); opacity: 1; }
+    }
+
+    .wrong-image.scare-anim {
+      animation: zoomInScare 1s linear forwards;
+    }
+
+    /* ========== 进度条 ========== */
+    .timer-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .progress-bar {
+      width: 120px;
+      height: 4px;
+      background: #e0e0e0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: #000;
+      position: absolute;
+      right: 0;
+      top: 0;
+      transition: width 1s linear;
+    }
+
+    /* ========== 成就弹出提示 ========== */
+    .ach-popup {
+      position: fixed;
+      right: -320px;
+      bottom: 100px;
+      width: 300px;
+      background: #fff;
+      border: 2px solid #000;
+      z-index: 1200;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      transition: right 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+      box-shadow: -4px 4px 0 rgba(0,0,0,0.1);
+    }
+
+    .ach-popup.show {
+      right: 20px;
+    }
+
+    .ach-popup .ach-popup-icon {
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+      border: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .ach-popup .ach-popup-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .ach-popup .ach-popup-info .ach-popup-title {
+      font-size: 13px;
+      color: #999;
+      margin-bottom: 2px;
+    }
+
+    .ach-popup .ach-popup-info .ach-popup-name {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .ach-popup .ach-popup-info .ach-popup-desc {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .ach-popup .ach-popup-hint {
+      font-size: 10px;
+      color: #999;
+      margin-top: 4px;
+    }
+
+    .ach-popup.frozen {
+      border-color: #e00;
     }
 
     /* ========== 答对提示 ========== */
@@ -288,8 +389,11 @@
 
   <!-- 顶部信息栏 -->
   <div class="top-bar">
-    <span class="seed-display" id="seedDisplay" style="font-size:12px; color:#999; font-family:monospace;"></span>
-    <span class="timer" id="timer">剩余时间 01:00</span>
+    <span class="seed-display" id="seedDisplay" style="font-size:16px; color:#999; font-family:monospace;"></span>
+    <div class="timer-wrapper">
+      <span class="timer" id="timer">剩余时间 01:00</span>
+      <div class="progress-bar"><div class="progress-bar-fill" id="progressFill" style="width:100%;"></div></div>
+    </div>
   </div>
 
   <!-- 答题主体 -->
@@ -326,15 +430,41 @@
     </div>
   </div>
 
+  <!-- 成就弹出提示 -->
+  <div class="ach-popup" id="achPopup">
+    <div class="ach-popup-icon" id="achPopupIcon"></div>
+    <div class="ach-popup-info">
+      <div class="ach-popup-title">成就达成！</div>
+      <div class="ach-popup-name" id="achPopupName"></div>
+      <div class="ach-popup-desc" id="achPopupDesc"></div>
+      <div class="ach-popup-hint">按 ESC 保持常驻</div>
+    </div>
+  </div>
+
   <!-- ========== 题库 ========== -->
   <script src="banks.js"></script>
+  <script src="achievements.js"></script>
   <script>
-    // 根据用户选择的题库加载题目
-    var selectedBank = (function () {
-      try { return localStorage.getItem('selected_bank') || '题库1--通用（并非）'; }
-      catch (e) { return '题库1--通用（并非）'; }
+    // 根据用户选择的多个题库合并加载题目
+    var selectedBanks = (function () {
+      try {
+        var saved = JSON.parse(localStorage.getItem('selected_banks') || 'null');
+        if (saved && saved.length > 0) return saved;
+      } catch (e) {}
+      return ['题库1--通用（并非）'];
     })();
-    var questions = (typeof BANKS !== 'undefined' && BANKS[selectedBank]) ? BANKS[selectedBank] : [];
+    var questions = [];
+    if (typeof BANKS !== 'undefined') {
+      for (var bi = 0; bi < selectedBanks.length; bi++) {
+        var bankName = selectedBanks[bi];
+        if (BANKS[bankName]) {
+          questions = questions.concat(BANKS[bankName]);
+        }
+      }
+    }
+    if (questions.length === 0 && typeof BANKS !== 'undefined' && BANKS['题库1--通用（并非）']) {
+      questions = BANKS['题库1--通用（并非）'];
+    }
   </script>
   <script>
     (function () {
@@ -359,7 +489,8 @@
       // ========== 可用小游戏列表 ==========
       var MINIGAMES = [
         { id: 'minigame1', name: '霓虹跑酷', path: 'minigame1/index.html' },
-        { id: 'minigame2', name: '霓虹飞驰', path: 'minigame2/index.html' }
+        { id: 'minigame2', name: '霓虹飞驰', path: 'minigame2/index.html' },
+        { id: 'minigame3', name: '东方弹幕', path: 'minigame3/index.html' }
       ];
 
       // 种子版选择下一个小游戏（前 N 个不重复，N = 小游戏数量）
@@ -389,13 +520,71 @@
       }
 
       // ========== 设置 ==========
-      var settings = { music: true, sfx: true, minigame: true };
+      var settings = { music: true, sfx: true, minigame: true, scare: false };
       try {
         var savedSettings = JSON.parse(localStorage.getItem('game_settings') || '{}');
         settings.music    = (savedSettings.music !== false);
         settings.sfx      = (savedSettings.sfx !== false);
         settings.minigame = (savedSettings.minigame !== false);
+        settings.scare    = (savedSettings.scare === true);
       } catch (e) {}
+
+      // ========== 答错图片池 ==========
+      // 首次答错固定用 kawaii.png，后续从池中不重复随机
+      var kawaiiPool = [
+        'images/kawaii/1.png',  
+        'images/kawaii/2.png',  
+        'images/kawaii/3.png',
+        'images/kawaii/4.png',  
+        'images/kawaii/5.jpg',  
+        'images/kawaii/6.jpg',
+        'images/kawaii/7.jpg',  
+        'images/kawaii/8.png',  
+        'images/kawaii/9.png',
+        'images/kawaii/10.jpg',    
+        'images/kawaii/12.png',
+        'images/kawaii/13.jpg',  
+        'images/kawaii/14.jpg',  
+        'images/kawaii/15.png',
+        'images/kawaii/16.png',  
+        'images/kawaii/17.png',  
+        'images/kawaii/18.png',
+        'images/kawaii/19.png', 
+        'images/kawaii/21.png',
+        'images/kawaii/22.png', 
+        'images/kawaii/23.png', 
+        'images/kawaii/24.png',
+        'images/kawaii/25.png',  
+        'images/kawaii/26.png',  
+        'images/kawaii/27.png',
+        'images/kawaii/28.png',  
+        'images/kawaii/30.png',
+        'images/kawaii/32.png',  
+        'images/kawaii/33.png'
+      ];
+      var wrongAnswerCount = 0;
+      var kawaiiShuffled = [];
+
+      function shuffleArray(arr) {
+        var a = arr.slice();
+        for (var i = a.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var t = a[i]; a[i] = a[j]; a[j] = t;
+        }
+        return a;
+      }
+
+      function getFailImage() {
+        wrongAnswerCount++;
+        if (wrongAnswerCount === 1) {
+          return 'images/kawaii.png';
+        }
+        var idx = (wrongAnswerCount - 2) % kawaiiPool.length;
+        if (idx === 0) {
+          kawaiiShuffled = shuffleArray(kawaiiPool);
+        }
+        return kawaiiShuffled[idx];
+      }
 
       // ========== 音频系统 ==========
       var AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -406,43 +595,46 @@
         if (audioCtx.state === 'suspended') audioCtx.resume();
       }
 
-      // --- 背景音乐：舒缓氛围 ---
+      // --- 背景音乐：欢快节奏 ---
       var musicNodes = [];
       var musicPlaying = false;
+      var musicUrgent = false;
 
       function startMusic() {
         if (!settings.music || musicPlaying) return;
         try { ensureAudio(); } catch (e) { return; }
         musicPlaying = true;
+        musicUrgent = false;
 
         var now = audioCtx.currentTime;
-        // 舒缓的 Cmaj7 和弦进行：C - G - Am - F，使用柔和的正弦波与三角波叠加
+        // 欢快的 I-V-vi-IV 进行在 C 大调，较快的和弦切换
         var chords = [
-          [261.63, 329.63, 392.00, 493.88],  // Cmaj7
+          [261.63, 329.63, 392.00, 523.25],  // C
           [196.00, 293.66, 392.00, 493.88],  // G
           [220.00, 261.63, 329.63, 440.00],  // Am
           [174.61, 261.63, 349.23, 440.00],  // F
         ];
-        var chordDuration = 6; // 每个和弦持续 6 秒
+        var chordDuration = 2.5; // 更快的和弦切换
 
         function scheduleChord(startIdx, startTime) {
-          for (var rep = 0; rep < 30; rep++) { // 足够循环到游戏结束
+          for (var rep = 0; rep < 80; rep++) {
             var chord = chords[(startIdx + rep) % chords.length];
             chord.forEach(function (freq) {
               var osc = audioCtx.createOscillator();
               var gain = audioCtx.createGain();
               var filter = audioCtx.createBiquadFilter();
 
-              osc.type = freq > 300 ? 'sine' : 'triangle';
+              // 用明亮的波形
+              osc.type = freq > 350 ? 'sine' : 'triangle';
               osc.frequency.value = freq;
 
               filter.type = 'lowpass';
-              filter.frequency.value = 800;
-              filter.Q.value = 0.5;
+              filter.frequency.value = 1200;
+              filter.Q.value = 0.4;
 
               gain.gain.setValueAtTime(0, startTime + rep * chordDuration);
-              gain.gain.linearRampToValueAtTime(0.025, startTime + rep * chordDuration + 1.2);
-              gain.gain.setValueAtTime(0.025, startTime + rep * chordDuration + chordDuration - 1.2);
+              gain.gain.linearRampToValueAtTime(0.03, startTime + rep * chordDuration + 0.6);
+              gain.gain.setValueAtTime(0.03, startTime + rep * chordDuration + chordDuration - 0.6);
               gain.gain.linearRampToValueAtTime(0, startTime + rep * chordDuration + chordDuration);
 
               osc.connect(filter);
@@ -453,19 +645,93 @@
               osc.stop(startTime + rep * chordDuration + chordDuration);
               musicNodes.push(osc);
             });
+            // 添加轻微的节奏感：低音鼓点
+            var beatOsc = audioCtx.createOscillator();
+            var beatGain = audioCtx.createGain();
+            beatOsc.type = 'sine';
+            beatOsc.frequency.value = 60;
+            beatGain.gain.setValueAtTime(0, startTime + rep * chordDuration);
+            beatGain.gain.linearRampToValueAtTime(0.04, startTime + rep * chordDuration + 0.05);
+            beatGain.gain.exponentialRampToValueAtTime(0.001, startTime + rep * chordDuration + 0.15);
+            beatOsc.connect(beatGain);
+            beatGain.connect(audioCtx.destination);
+            beatOsc.start(startTime + rep * chordDuration);
+            beatOsc.stop(startTime + rep * chordDuration + 0.2);
+            musicNodes.push(beatOsc);
           }
         }
 
         scheduleChord(0, now);
-        scheduleChord(2, now + 0.08); // 略微偏移第二层
+        scheduleChord(2, now + 0.06);
       }
 
-      function stopMusic() {
-        musicPlaying = false;
+      function switchMusicToUrgent() {
+        if (!settings.music || !musicPlaying || musicUrgent) return;
+        musicUrgent = true;
+        try { ensureAudio(); } catch (e) { return; }
+
+        // 停止当前音乐
+        stopMusicNodes();
+        musicPlaying = true;
+
+        var now = audioCtx.currentTime;
+        // 紧迫感：更快、更高的音
+        var chords = [
+          [329.63, 415.30, 523.25, 659.25],  // Em 高位
+          [293.66, 369.99, 440.00, 587.33],  // Dm
+        ];
+        var chordDuration = 0.8; // 极快的切换
+
+        function scheduleUrgent() {
+          for (var rep = 0; rep < 120; rep++) {
+            var chord = chords[rep % 2];
+            chord.forEach(function (freq) {
+              var osc = audioCtx.createOscillator();
+              var gain = audioCtx.createGain();
+              osc.type = 'square';
+              osc.frequency.value = freq;
+
+              gain.gain.setValueAtTime(0, now + rep * chordDuration);
+              gain.gain.linearRampToValueAtTime(0.015, now + rep * chordDuration + 0.08);
+              gain.gain.setValueAtTime(0.015, now + rep * chordDuration + chordDuration - 0.15);
+              gain.gain.linearRampToValueAtTime(0, now + rep * chordDuration + chordDuration);
+
+              osc.connect(gain);
+              gain.connect(audioCtx.destination);
+              osc.start(now + rep * chordDuration);
+              osc.stop(now + rep * chordDuration + chordDuration);
+              musicNodes.push(osc);
+            });
+            // 急促的鼓点
+            var beatOsc = audioCtx.createOscillator();
+            var beatGain = audioCtx.createGain();
+            beatOsc.type = 'square';
+            beatOsc.frequency.value = 50;
+            beatGain.gain.setValueAtTime(0, now + rep * chordDuration);
+            beatGain.gain.linearRampToValueAtTime(0.03, now + rep * chordDuration + 0.03);
+            beatGain.gain.exponentialRampToValueAtTime(0.001, now + rep * chordDuration + 0.1);
+            beatOsc.connect(beatGain);
+            beatGain.connect(audioCtx.destination);
+            beatOsc.start(now + rep * chordDuration);
+            beatOsc.stop(now + rep * chordDuration + 0.12);
+            musicNodes.push(beatOsc);
+          }
+        }
+
+        scheduleUrgent();
+      }
+
+      function stopMusicNodes() {
         musicNodes.forEach(function (n) {
           try { n.stop(); } catch (e) {}
         });
         musicNodes = [];
+      }
+
+      function stopMusic() {
+        musicPlaying = false;
+        musicUrgent = false;
+        stopMusicNodes();
       }
 
       // --- 音效 ---
@@ -657,6 +923,9 @@
             localStorage.setItem('quiz_minigame_index', String(minigameIndex));
           }
 
+          // 确保 initialTime 存在（兼容旧存档）
+          if (!state.initialTime) state.initialTime = state.timeLeft || 60;
+
           startTimer();
           renderQuestion();
 
@@ -706,9 +975,15 @@
         const s = state.timeLeft % 60;
         timerEl.textContent = '剩余时间 ' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
 
+        // 进度条：从右边开始减少
+        var totalTime = state.initialTime || 60;
+        var pct = Math.max(0, (state.timeLeft / totalTime) * 100);
+        document.getElementById('progressFill').style.width = pct + '%';
+
         // 15 秒以下警告
         if (state.timeLeft <= 15) {
           timerEl.classList.add('warning');
+          switchMusicToUrgent();
         } else {
           timerEl.classList.remove('warning');
         }
@@ -757,6 +1032,16 @@
         allBtns.forEach(function (b) { b.classList.add('disabled'); });
 
         state.answeredCount++;
+
+        // 成就检测：第一次答题
+        var totalBefore = ACHIEVEMENTS.getTotalAnswered();
+        if (totalBefore === 0) {
+          ACHIEVEMENTS.markGamePlayed();
+          if (ACHIEVEMENTS.unlock('first_answer')) {
+            showAchievementPopup('first_answer');
+          }
+        }
+        ACHIEVEMENTS.addAnsweredCount(1);
 
         if (isCorrect) {
           // 正确
@@ -815,12 +1100,28 @@
         var parent = imgEl.parentNode;
         var clone = imgEl.cloneNode(true);
         parent.replaceChild(clone, imgEl);
+        // 重新获取元素引用并设置图片来源
+        var newImgEl = wrongOverlayEl.querySelector('.wrong-image');
+        var imgSrc = getFailImage();
+        newImgEl.src = imgSrc;
 
-        // 2 秒后隐藏
+        if (settings.scare) {
+          // 惊吓模式：匀速变大动画 + 扣2秒
+          newImgEl.classList.add('scare-anim');
+          state.timeLeft = Math.max(0, state.timeLeft - 2);
+          updateTimerDisplay();
+          if (state.timeLeft <= 0) {
+            endGame();
+            return;
+          }
+        }
+        // 普通模式：CSS 默认 zoomIn 动画（先慢后快）
+
+        var hideDelay = settings.scare ? 1000 : 2000;
         setTimeout(function () {
           wrongOverlayEl.classList.remove('active');
           if (callback) callback();
-        }, 2000);
+        }, hideDelay);
       }
 
       // ---------- 答完一道题后 ----------
@@ -878,6 +1179,15 @@
         clearInterval(timerInterval);
         timerEl.classList.remove('warning');
         stopMusic();
+        hideAchievementPopup();
+
+        // 成就检测：完成一次游戏流程（到达游戏结束画面）
+        var sessionsBefore = ACHIEVEMENTS.getTotalSessions();
+        ACHIEVEMENTS.addSessionCount(1);
+        var sessionsNow = ACHIEVEMENTS.getTotalSessions();
+        if (sessionsNow >= 10 && sessionsBefore < 10) {
+          ACHIEVEMENTS.unlock('tenth_answer');
+        }
 
         // 保存结算数据
         var results = {
@@ -889,7 +1199,8 @@
           correctList: state.correctQuestions,
           wrongList: state.wrongQuestions,
           totalQuestions: gameQuestions.length,
-          timeLeft: state.timeLeft
+          timeLeft: state.timeLeft,
+          sessionAchievements: ACHIEVEMENTS.getSessionUnlocked()
         };
         localStorage.setItem('quiz_results', JSON.stringify(results));
         localStorage.removeItem('quiz_state');
@@ -925,9 +1236,91 @@
         endGame();
       }
 
+      // ---------- 成就弹窗系统 ----------
+      var achPopupShowing = false;
+      var achPopupFrozen = false;
+      var achPopupTimer = null;
+
+      function showAchievementPopup(achId) {
+        var def = ACHIEVEMENTS.DEFS.find(function(d) { return d.id === achId; });
+        if (!def) return;
+
+        // 清除之前的计时器
+        if (achPopupTimer) clearTimeout(achPopupTimer);
+
+        var popup = document.getElementById('achPopup');
+        document.getElementById('achPopupIcon').innerHTML = '<img src="' + def.icon + '" alt="">';
+        document.getElementById('achPopupName').textContent = def.name;
+        document.getElementById('achPopupDesc').textContent = def.desc;
+        popup.classList.remove('frozen');
+        document.getElementById('achPopup').querySelector('.ach-popup-hint').textContent = '按 ESC 保持常驻 | 3秒后自动消失';
+
+        // 显示
+        achPopupShowing = true;
+        achPopupFrozen = false;
+        popup.classList.add('show');
+
+        // 3秒后自动隐藏
+        achPopupTimer = setTimeout(function () {
+          hideAchievementPopup();
+        }, 3000);
+      }
+
+      function hideAchievementPopup() {
+        var popup = document.getElementById('achPopup');
+        popup.classList.remove('show', 'frozen');
+        achPopupShowing = false;
+        achPopupFrozen = false;
+        if (achPopupTimer) clearTimeout(achPopupTimer);
+      }
+
+      function freezeAchievementPopup() {
+        achPopupFrozen = true;
+        if (achPopupTimer) clearTimeout(achPopupTimer);
+        document.getElementById('achPopup').classList.add('frozen');
+        document.getElementById('achPopup').querySelector('.ach-popup-hint').textContent = '已常驻，再按 ESC 立即缩回 | 选择"继续"可恢复计时';
+      }
+
+      function quickHideAchievementPopup() {
+        // 快速缩回（再按一次 ESC 时触发）
+        var popup = document.getElementById('achPopup');
+        popup.classList.remove('show', 'frozen');
+        achPopupShowing = false;
+        achPopupFrozen = false;
+        if (achPopupTimer) clearTimeout(achPopupTimer);
+      }
+
+      // 继续按钮：取消常驻，重新计时3秒
+      function unfreezeAchievementPopup() {
+        achPopupFrozen = false;
+        document.getElementById('achPopup').classList.remove('frozen');
+        document.getElementById('achPopup').querySelector('.ach-popup-hint').textContent = '按 ESC 保持常驻 | 3秒后自动消失';
+        // 重新计时3秒
+        achPopupTimer = setTimeout(function () {
+          hideAchievementPopup();
+        }, 3000);
+      }
+
       // ESC 键监听
       document.addEventListener('keydown', function (e) {
         if (e.code === 'Escape' && !isGameOver) {
+          // 如果成就弹窗已冻结，再按 ESC → 立刻缩回
+          if (achPopupFrozen) {
+            quickHideAchievementPopup();
+            // 同时关闭退出界面
+            if (exitOverlayEl.classList.contains('active')) {
+              hideExitModal();
+            }
+            return;
+          }
+          // 如果成就弹窗正在显示但未冻结 → 冻结 + 打开退出界面
+          if (achPopupShowing && !achPopupFrozen) {
+            freezeAchievementPopup();
+            pauseTimer();
+            exitOverlayEl.classList.add('active');
+            return;
+          }
+          // 退出弹窗开关
           if (exitOverlayEl.classList.contains('active')) {
             hideExitModal();
           } else {
@@ -938,7 +1331,12 @@
 
       // 退出弹窗按钮绑定
       document.getElementById('btnExitConfirm').addEventListener('click', confirmExit);
-      document.getElementById('btnExitCancel').addEventListener('click', hideExitModal);
+      document.getElementById('btnExitCancel').addEventListener('click', function () {
+        if (achPopupFrozen) {
+          unfreezeAchievementPopup();
+        }
+        hideExitModal();
+      });
 
       // ---------- 启动 ----------
       if (document.readyState === 'loading') {

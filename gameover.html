@@ -217,6 +217,53 @@
     .btn-back:hover {
       background: #333;
     }
+
+    /* ========== 成就区域 ========== */
+    .ach-section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #000;
+    }
+
+    .ach-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+      border: 1px solid #e0e0e0;
+      margin-bottom: 8px;
+      text-align: left;
+    }
+
+    .ach-card .ach-icon {
+      width: 56px;
+      height: 56px;
+      flex-shrink: 0;
+      border: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .ach-card .ach-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .ach-card .ach-info .ach-name {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .ach-card .ach-info .ach-desc {
+      font-size: 13px;
+      color: #666;
+    }
   </style>
 </head>
 <body>
@@ -253,6 +300,12 @@
       <div class="tag-list" id="wrongTagList"></div>
     </div>
 
+    <!-- 本局成就 -->
+    <div class="section" id="achSection">
+      <div class="section-title">本局触发的成就</div>
+      <div id="achList"></div>
+    </div>
+
     <!-- 返回按钮 -->
     <button class="btn-back" onclick="window.location.href='index.html'">返回首页</button>
   </div>
@@ -267,12 +320,27 @@
 
   <!-- ========== 题库 ========== -->
   <script src="banks.js"></script>
+  <script src="achievements.js"></script>
   <script>
-    var selectedBank = (function () {
-      try { return localStorage.getItem('selected_bank') || '题库1--通用（并非）'; }
-      catch (e) { return '题库1--通用（并非）'; }
+    var selectedBanks = (function () {
+      try {
+        var saved = JSON.parse(localStorage.getItem('selected_banks') || 'null');
+        if (saved && saved.length > 0) return saved;
+      } catch (e) {}
+      return ['题库1--通用（并非）'];
     })();
-    var questions = (typeof BANKS !== 'undefined' && BANKS[selectedBank]) ? BANKS[selectedBank] : [];
+    var questions = [];
+    if (typeof BANKS !== 'undefined') {
+      for (var bi = 0; bi < selectedBanks.length; bi++) {
+        var bankName = selectedBanks[bi];
+        if (BANKS[bankName]) {
+          questions = questions.concat(BANKS[bankName]);
+        }
+      }
+    }
+    if (questions.length === 0 && typeof BANKS !== 'undefined' && BANKS['题库1--通用（并非）']) {
+      questions = BANKS['题库1--通用（并非）'];
+    }
   </script>
   <script>
     (function () {
@@ -400,6 +468,25 @@
       modalOverlay.addEventListener('click', function (e) {
         if (e.target === modalOverlay) closeModal();
       });
+
+      // ========== 成就展示 ==========
+      var sessionAch = results.sessionAchievements || [];
+      var achListEl = document.getElementById('achList');
+      if (sessionAch.length === 0) {
+        achListEl.innerHTML = '<span class="empty-hint">本局未触发成就</span>';
+      } else {
+        var achHtml = '';
+        for (var ai = 0; ai < sessionAch.length; ai++) {
+          var a = sessionAch[ai];
+          achHtml += '<div class="ach-card">';
+          achHtml += '<div class="ach-icon"><img src="' + a.icon + '" alt=""></div>';
+          achHtml += '<div class="ach-info">';
+          achHtml += '<div class="ach-name">' + a.name + '</div>';
+          achHtml += '<div class="ach-desc">' + a.desc + '</div>';
+          achHtml += '</div></div>';
+        }
+        achListEl.innerHTML = achHtml;
+      }
 
       // 清理 localStorage（已展示完毕）
       // localStorage.removeItem('quiz_results');  // 保留以便刷新查看，点击开始新游戏时覆盖

@@ -25,164 +25,193 @@
     th { background: #eee; font-weight: 700; }
     code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
     kbd { display: inline-block; padding: 2px 8px; border: 1px solid #000; border-radius: 4px; font-family: inherit; margin: 0 2px; font-size: 13px; background: #eee; }
-    .back { margin-top: 50px; text-align: center; }
-    .back a { color: #000; font-weight: 700; text-decoration: none; border: 2px solid #000; padding: 12px 30px; display: inline-block; }
-    .back a:hover { background: #000; color: #fff; }
+    .back-link {
+      position: fixed;
+      top: 20px;
+      left: 24px;
+      color: #000;
+      font-size: 15px;
+      letter-spacing: 1px;
+      text-decoration: none;
+      z-index: 10;
+      font-weight: 700;
+    }
+    .back-link:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
 
+<a class="back-link" href="index.html">← 返回首页</a>
+
 <h1>梗知识答题——但是缝合版</h1>
 
-<p>一个融合答题与小游戏的交互式网页项目，在答题间隙插入小游戏来争取额外时间。</p>
+<p>(目前并非最新版游戏说明)这是一个融合<b>限时答题</b>与<b>小游戏</b>的交互式网页项目。你需要回答各种题目，同时在答题间隙完成小游戏来争取额外时间，挑战更高分数。</p>
 
-<h2>整体结构</h2>
+<h2>整体流程</h2>
+<pre style="background:#f8f8f8;padding:16px;border:1px solid #ddd;font-size:14px;line-height:1.8;">首页 → 选择题库 → 开始答题 → 中途触发小游戏 → 结算页</pre>
 
-<pre style="background:#f8f8f8;padding:16px;border:1px solid #ddd;font-size:14px;line-height:1.8;">
-首页 → 答题 → 结算页
-       ↓ 每 5 题触发一次
-     小游戏环节（获取奖励时间）
-</pre>
-
+<p>游戏有两种进入方式：</p>
 <ul>
-  <li><b>答题模式</b>：选择题库后开始限时答题，初始 60 秒倒计时</li>
-  <li><b>小游戏模式</b>：从首页直接进入小游戏，自由游玩</li>
+  <li><b>开始游戏 → 答题</b>：进行完整答题流程，包含小游戏环节</li>
+  <li><b>开始游戏 → 小游戏</b>：跳过答题，直接游玩某个小游戏（独立模式）</li>
 </ul>
 
 <h2>答题玩法</h2>
 
+<h3>基本规则</h3>
 <ol>
-  <li>在首页点击「开始游戏」→「答题」→ 选择题库 →「开始答题」</li>
-  <li>每道题 4 个选项，选项顺序由<b>种子随机</b>决定</li>
-  <li>答对进入下一题，答错显示动画后继续</li>
-  <li>每答对 <b>5 道题</b>触发一次小游戏环节，完成小游戏可获得额外时间</li>
-  <li>倒计时归零或答完所有题目则游戏结束</li>
-  <li>按 <kbd>Esc</kbd> 可随时退出</li>
+  <li>在首页点击「开始游戏」→「答题」，选择一个题库后开始</li>
+  <li>初始倒计时 <b>60 秒</b>，每道题 4 个选项，题目顺序和选项排列由种子随机决定</li>
+  <li>答对 → 进入下一题；答错 → 弹出提示图片后继续作答</li>
+  <li>每答对 <b>5 道题</b>，自动进入一个小游戏环节。完成小游戏后，根据你的游戏成绩获得额外答题时间</li>
+  <li>倒计时归零或题库耗尽 → 游戏结束，看到最终成绩和题目统计</li>
+  <li>按 <kbd>Esc</kbd> 可随时退出当前答题</li>
 </ol>
 
 <h3>种子系统</h3>
-<ul>
-  <li>每局答题开始时生成一个随机种子，显示在左上角</li>
-  <li>种子可决定：题目顺序、每道题的选项排列、小游戏出现顺序</li>
-  <li>小游戏前 N 次出现（N = 小游戏数量）保证不重复</li>
-</ul>
+<p>每局开始时会生成一个随机种子（显示在左上角），相同种子的题目顺序、选项排列和小游戏顺序完全相同。你可以和朋友用同一个种子来比赛谁能拿到更高分。</p>
 
-<h3>作弊码</h3>
-<p>在答题页面键盘输入 <code>invincible</code> 可开启无敌模式（答错不扣时间）。</p>
+<h3>惊吓模式（可在设置中开启）</h3>
+<p>开启后，答错时弹出的图片会以更大的尺寸呈现，并额外扣除 <b>2 秒</b>答题时间，紧张感提升。</p>
+
+<h3>音乐与音效</h3>
+<p>答题过程中会播放欢快的背景音乐。当剩余时间 ≤ 15 秒时，音乐会变得急促，提醒你抓紧时间。</p>
+
+<h3>成就系统</h3>
+<p>在游戏过程中达成特定条件时可以解锁成就。成就解锁后会在右下角弹出提示，按 <kbd>Esc</kbd> 可使其保持常驻方便截图。在首页「其他」→「成就」中可查看所有已解锁和未解锁的成就。</p>
 
 <h2>小游戏 1 · 霓虹跑酷</h2>
 
-<p>3D 无尽跑酷游戏，玩家在三条车道上奔跑躲避障碍。</p>
+<p>3D 无尽跑酷。你在三条车道上奔跑，躲避障碍物，收集道具和金币，跑得越远分数越高。</p>
 
 <h3>操作</h3>
 <table>
   <tr><th>按键</th><th>功能</th></tr>
-  <tr><td><kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd></td><td>变道</td></tr>
-  <tr><td><kbd>↑</kbd> / <kbd>空格</kbd></td><td>跳跃（空中再按 = 二段跳 + 前空翻）</td></tr>
+  <tr><td><kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd></td><td>左右变道</td></tr>
+  <tr><td><kbd>↑</kbd> / <kbd>空格</kbd></td><td>跳跃（空中再按可二段跳 + 前空翻）</td></tr>
   <tr><td><kbd>↓</kbd></td><td>滑铲</td></tr>
-  <tr><td><kbd>P</kbd></td><td>暂停</td></tr>
-  <tr><td><kbd>Esc</kbd></td><td>退出游戏（弹窗确认）</td></tr>
-  <tr><td><kbd>M</kbd></td><td>静音</td></tr>
+  <tr><td><kbd>P</kbd></td><td>暂停 / 继续</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>退出游戏（弹出确认）</td></tr>
+  <tr><td><kbd>M</kbd></td><td>静音 / 取消静音</td></tr>
 </table>
 
-<h3>障碍物</h3>
+<h3>障碍物与应对</h3>
 <table>
   <tr><th>类型</th><th>通过方式</th></tr>
-  <tr><td>矮栏</td><td>滑铲 或 跳跃</td></tr>
-  <tr><td>悬空板</td><td>滑铲</td></tr>
-  <tr><td>高墙</td><td>跳跃 或 变道</td></tr>
-  <tr><td>双宽障碍</td><td>变道避开</td></tr>
-  <tr><td>移动高墙</td><td>左右滑动，需判断时机</td></tr>
-  <tr><td>蓝色高台</td><td>可站上去奔跑，金币排列其上</td></tr>
+  <tr><td>矮栏</td><td>滑铲或跳跃</td></tr>
+  <tr><td>悬空板</td><td>滑铲（跳跃会撞上）</td></tr>
+  <tr><td>高墙</td><td>跳跃或变道</td></tr>
+  <tr><td>双宽障碍</td><td>必须变道绕开</td></tr>
+  <tr><td>移动高墙</td><td>左右来回滑动，注意判断变道时机</td></tr>
+  <tr><td>蓝色高台</td><td>可站上去跑，上方有金币排列</td></tr>
 </table>
 
 <h3>道具</h3>
 <table>
   <tr><th>道具</th><th>效果</th></tr>
-  <tr><td>护盾 ◈</td><td>抵挡一次碰撞死亡，撞碎障碍 +15 分</td></tr>
-  <tr><td>磁铁 ◎</td><td>持续 8 秒，吸附范围内金币</td></tr>
-  <tr><td>无敌 ✸</td><td>持续 15 秒，撞碎障碍 +30 分</td></tr>
+  <tr><td>护盾 ◈</td><td>抵挡一次碰撞，撞碎障碍并获得 +15 分</td></tr>
+  <tr><td>磁铁 ◎</td><td>持续 8 秒，自动吸附周围金币</td></tr>
+  <tr><td>无敌 ✸</td><td>持续 15 秒，撞碎障碍并获得 +30 分</td></tr>
 </table>
 
-<h3>计分</h3>
+<h3>计分与奖励时间</h3>
 <ul>
   <li>基础分 = 速度 × 时间（速度从 13 逐渐加速至 30 m/s）</li>
-  <li>收集金币：10 分 × 连击倍率（最高 ×5）</li>
-  <li>擦身而过：+5 分</li>
-  <li>每 400 分里程碑：SPEED UP</li>
+  <li>金币：10 分 × 连击倍率（最高 ×5）</li>
+  <li>擦身而过（差点撞到但躲开）：+5 分</li>
+  <li>每 400 分触发一次 SPEED UP，游戏节奏加快</li>
+  <li>在 2,000 / 5,000 / 8,000 分时自动切换场景主题</li>
 </ul>
 
-<h3>场景切换</h3>
-<p>在 2,000 / 5,000 / 8,000 分时自动切换主题场景：霓虹都市 → 荧光雨林 → 极光雪原 → 落日沙海</p>
-
-<h3>奖励时间（从答题进入时）</h3>
+<p>从答题进入时的奖励时间：</p>
 <table>
   <tr><th>分数</th><th>答题加时</th></tr>
-  <tr><td>≥ 2,500 分</td><td>+5 秒</td></tr>
-  <tr><td>≥ 5,000 分</td><td>+10 秒</td></tr>
-  <tr><td>≥ 10,000 分</td><td>+15 秒</td></tr>
-</table>
-
-<h3>作弊码</h3>
-<table>
-  <tr><th>作弊码</th><th>效果</th></tr>
-  <tr><td><code>invincible</code></td><td>开启无敌模式（碰撞不死）</td></tr>
-  <tr><td><code>mafuyu</code></td><td>立刻达到 10,000 分并结束游戏</td></tr>
+  <tr><td>≥ 1,000 分</td><td>+5 秒</td></tr>
+  <tr><td>≥ 2,000 分</td><td>+10 秒</td></tr>
+  <tr><td>≥ 5,000 分</td><td>+15 秒</td></tr>
 </table>
 
 <h2>小游戏 2 · 霓虹飞驰</h2>
 
-<p>3D 太空飞行游戏，驾驶飞船在霓虹隧道中穿梭收集晶石。</p>
+<p>3D 太空飞行游戏。驾驶飞船在霓虹隧道中穿行，躲避障碍物，尽可能多地收集晶石和道具。</p>
 
 <h3>操作</h3>
 <table>
   <tr><th>按键</th><th>功能</th></tr>
-  <tr><td><kbd>A</kbd> <kbd>D</kbd> / <kbd>←</kbd> <kbd>→</kbd></td><td>转向</td></tr>
+  <tr><td><kbd>A</kbd> <kbd>D</kbd> / <kbd>←</kbd> <kbd>→</kbd></td><td>左右转向</td></tr>
   <tr><td><kbd>W</kbd> / <kbd>↑</kbd></td><td>推进加速</td></tr>
-  <tr><td><kbd>P</kbd></td><td>暂停</td></tr>
-  <tr><td><kbd>Esc</kbd></td><td>退出游戏（弹窗确认）</td></tr>
+  <tr><td><kbd>P</kbd></td><td>暂停 / 继续</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>退出游戏（弹出确认）</td></tr>
   <tr><td><kbd>M</kbd></td><td>音乐开关</td></tr>
-  <tr><td><kbd>R</kbd>（结算时）</td><td>快速重开</td></tr>
+  <tr><td><kbd>R</kbd>（结算界面）</td><td>快速重开</td></tr>
 </table>
-<p>触屏设备支持拖动操控。</p>
+<p>触屏设备也支持拖拽操控。</p>
 
 <h3>对象与道具</h3>
 <table>
   <tr><th>类型</th><th>说明</th></tr>
-  <tr><td>二十面体障碍</td><td>碰撞即死</td></tr>
-  <tr><td>锥体障碍</td><td>碰撞即死</td></tr>
-  <tr><td>横梁障碍</td><td>碰撞即死</td></tr>
+  <tr><td>二十面体 / 锥体 / 横梁</td><td>障碍物，碰撞即死</td></tr>
   <tr><td>晶石 ◆</td><td>收集 +60 分</td></tr>
-  <tr><td>加速环</td><td>穿越 combo+1，boost 1.6s</td></tr>
+  <tr><td>加速环</td><td>穿越一次 combo+1，获得 1.6 秒短暂加速</td></tr>
   <tr><td>护盾</td><td>持续 6 秒，抵挡一次碰撞</td></tr>
-  <tr><td>磁铁</td><td>持续 8 秒，吸附晶石</td></tr>
-  <tr><td>双倍</td><td>持续 10 秒，分数 ×2</td></tr>
-  <tr><td>缓时</td><td>持续 6 秒，速度 ×0.55</td></tr>
+  <tr><td>磁铁</td><td>持续 8 秒，自动吸附周围晶石</td></tr>
+  <tr><td>双倍</td><td>持续 10 秒，得分 ×2</td></tr>
+  <tr><td>缓时</td><td>持续 6 秒，速度降至 0.55 倍</td></tr>
   <tr><td>星星</td><td>直接 +300 分</td></tr>
 </table>
 
-<h3>计分</h3>
+<h3>计分与奖励时间</h3>
 <ul>
-  <li>分数 = 速度 × 时间 × 0.12 × (1 + combo × 0.25) × (双倍道具 ×2)</li>
+  <li>分数 = 速度 × 时间 × 0.12 × (1 + combo × 0.25) × 双倍倍率</li>
   <li>速度范围：46 ~ 150 km/h</li>
 </ul>
 
-<h3>奖励时间（从答题进入时）</h3>
-<p>与小游戏 1 相同：2,500 分 +5 秒 / 5,000 分 +10 秒 / 10,000 分 +15 秒</p>
+<p>从答题进入时，奖励时间与霓虹跑酷相同：1,000 分 +5 秒 / 2,000 分 +10 秒 / 5,000 分 +15 秒。</p>
 
-<h3>作弊码</h3>
+<h2>小游戏 3 · 精灵大作战</h2>
+
+<p>俯视角生存射击。控制角色在地图上移动，消灭不断生成的敌人。击杀越多分数越高。</p>
+
+<h3>操作</h3>
 <table>
-  <tr><th>作弊码</th><th>效果</th></tr>
-  <tr><td><code>invincible</code></td><td>开启无敌模式（碰撞不死）</td></tr>
-  <tr><td><code>mafuyu</code></td><td>立刻达到 10,000 分并结束游戏</td></tr>
+  <tr><th>按键</th><th>功能</th></tr>
+  <tr><td><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> / <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></td><td>移动角色</td></tr>
+  <tr><td>鼠标移动</td><td>瞄准</td></tr>
+  <tr><td>鼠标点击 / 自动</td><td>射击</td></tr>
+  <tr><td><kbd>P</kbd></td><td>暂停 / 继续</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>退出游戏（弹出确认）</td></tr>
 </table>
 
-<h2>设置</h2>
-<ul>
-  <li>可在首页「其他」→「游戏设置」中开关音乐、音效、小游戏环节</li>
-</ul>
+<h3>击杀里程碑</h3>
+<table>
+  <tr><th>击杀数</th><th>奖励</th></tr>
+  <tr><td>击杀 ≥ 5</td><td>+5 秒答题时间</td></tr>
+  <tr><td>击杀 ≥ 20</td><td>+10 秒答题时间</td></tr>
+  <tr><td>击杀 ≥ 50</td><td>+15 秒答题时间</td></tr>
+</table>
 
-<div class="back"><a href="index.html">← 返回首页</a></div>
+<p>击杀数和已触发的里程碑会在屏幕顶部实时显示。</p>
+
+<h2>游戏设置</h2>
+
+<p>在首页「其他」→「游戏设置」中可以进行以下调整：</p>
+<table>
+  <tr><th>设置项</th><th>说明</th></tr>
+  <tr><td>音乐</td><td>开 / 关背景音乐</td></tr>
+  <tr><td>音效</td><td>开 / 关答题音效</td></tr>
+  <tr><td>小游戏</td><td>关闭后答题中途不再触发小游戏环节（从首页直接进入小游戏不受影响）</td></tr>
+  <tr><td>惊吓模式</td><td>开启后答错惩罚加重，图片弹出方式改变并额外扣减 2 秒</td></tr>
+  <tr><td>清空成就</td><td>重置所有已解锁的成就记录</td></tr>
+</table>
+
+
+<script src="achievements.js"></script>
+<script>
+  // 成就检测：说明书爱好者（第一次游戏前访问游戏说明）
+  if (!ACHIEVEMENTS.hasPlayedBefore()) {
+    ACHIEVEMENTS.unlock('instructions');
+  }
+</script>
 
 </body>
 </html>

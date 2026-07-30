@@ -41,8 +41,27 @@
     .toggle input:checked + .toggle-slider { background: #000; }
     .toggle input:checked + .toggle-slider::before { transform: translateX(24px); }
     .back-link {
-      display: block; text-align: center; margin-top: 48px;
-      color: #000; font-size: 15px; letter-spacing: 1px;
+      position: fixed;
+      top: 20px;
+      left: 24px;
+      color: #000;
+      font-size: 15px;
+      letter-spacing: 1px;
+      text-decoration: none;
+      z-index: 10;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+    .setting-hint {
+      font-size: 12px; color: #999; margin-top: -19px; margin-bottom: 8px; padding-left: 4px;
+    }
+    .btn-clear {
+      padding: 6px 18px; font-size: 13px; border: 2px solid #e00; color: #e00;
+      background: #fff; cursor: pointer; transition: all 0.12s ease;
+    }
+    .btn-clear:hover {
+      background: #e00; color: #fff;
     }
   </style>
 </head>
@@ -73,10 +92,26 @@
         <span class="toggle-slider"></span>
       </label>
     </div>
+    <div class="setting-hint">关闭后，答题过程不再出现小游戏</div>
+
+    <div class="setting-row">
+      <span class="setting-label">惊吓模式</span>
+      <label class="toggle">
+        <input type="checkbox" id="toggleScare" onchange="saveSettings()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="setting-hint">开启后，答错题目的惩罚更改为可爱女孩迅速跳脸并扣除两秒答题时间</div>
+
+    <div class="setting-row">
+      <span class="setting-label">清空成就</span>
+      <button class="btn-clear" onclick="clearAchievements()">清空</button>
+    </div>
 
     <a class="back-link" href="index.html">← 返回首页</a>
   </div>
 
+  <script src="achievements.js"></script>
   <script>
     function loadSettings() {
       try {
@@ -84,10 +119,12 @@
         document.getElementById('toggleMusic').checked    = (s.music !== false);
         document.getElementById('toggleSfx').checked      = (s.sfx !== false);
         document.getElementById('toggleMinigame').checked  = (s.minigame !== false);
+        document.getElementById('toggleScare').checked     = (s.scare === true);
       } catch (e) {
         document.getElementById('toggleMusic').checked    = true;
         document.getElementById('toggleSfx').checked      = true;
         document.getElementById('toggleMinigame').checked  = true;
+        document.getElementById('toggleScare').checked     = false;
       }
     }
 
@@ -95,9 +132,17 @@
       var settings = {
         music:    document.getElementById('toggleMusic').checked,
         sfx:      document.getElementById('toggleSfx').checked,
-        minigame: document.getElementById('toggleMinigame').checked
+        minigame: document.getElementById('toggleMinigame').checked,
+        scare:    document.getElementById('toggleScare').checked
       };
       try { localStorage.setItem('game_settings', JSON.stringify(settings)); } catch (e) {}
+    }
+
+    function clearAchievements() {
+      if (confirm('确定要清空所有成就记录吗？此操作不可撤销。')) {
+        ACHIEVEMENTS.clearAll();
+        alert('成就记录已清空。');
+      }
     }
 
     loadSettings();

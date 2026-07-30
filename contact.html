@@ -14,11 +14,24 @@
       background: #fff;
     }
     a { color: #000; }
+    .back-link {
+      position: fixed;
+      top: 20px;
+      left: 24px;
+      color: #000;
+      font-size: 15px;
+      letter-spacing: 1px;
+      text-decoration: none;
+      z-index: 10;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
   <h1>联系我们</h1>
   <p>答题部分制作者微信号"kimi_301"喵，想要出题的人可以联系喵</p>
-  <p><a href="index.html">← 返回首页</a></p>
+  <p><a class="back-link" href="index.html">← 返回首页</a></p>
 </body>
 </html>

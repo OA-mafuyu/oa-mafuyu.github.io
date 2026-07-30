@@ -160,6 +160,169 @@
       margin-top: 12px;
     }
 
+    /* ========== 题库多选样式 ========== */
+    .bank-select-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      font-size: 16px;
+      border: 2px solid #e0e0e0;
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .bank-select-item:hover {
+      border-color: #000;
+    }
+
+    .bank-select-item .bank-name {
+      text-align: left;
+      letter-spacing: 1px;
+    }
+
+    .bank-select-item .bank-checkbox {
+      width: 22px;
+      height: 22px;
+      border: 2px solid #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    .bank-select-item.selected {
+      border-color: #000;
+      background: #000;
+      color: #fff;
+    }
+
+    .bank-select-item.selected .bank-checkbox {
+      border-color: #fff;
+      background: #fff;
+      color: #000;
+    }
+
+    /* ========== 成就弹窗（右下角滑动弹出） ========== */
+    @keyframes achSlideIn {
+      0%   { transform: translateX(120%); }
+      100% { transform: translateX(0); }
+    }
+
+    @keyframes achSlideOut {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(120%); }
+    }
+
+    .ach-popup {
+      position: fixed;
+      right: 20px;
+      bottom: 30px;
+      width: 280px;
+      background: #fff;
+      border: 2px solid #000;
+      padding: 16px;
+      z-index: 2000;
+      transform: translateX(120%);
+      transition: none;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .ach-popup.show {
+      animation: achSlideIn 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+    }
+
+    .ach-popup.hide-slide {
+      animation: achSlideOut 0.3s ease-in forwards;
+    }
+
+    .ach-popup .ach-popup-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .ach-popup .ach-popup-icon {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      border: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ach-popup .ach-popup-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .ach-popup .ach-popup-title {
+      font-weight: 900;
+      font-size: 16px;
+      color: #000;
+    }
+
+    .ach-popup .ach-popup-desc {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    /* ========== 成就面板样式 ========== */
+    .ach-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px;
+      border: 1px solid #e0e0e0;
+      margin-bottom: 8px;
+      text-align: left;
+    }
+
+    .ach-card .ach-icon {
+      width: 48px;
+      height: 48px;
+      flex-shrink: 0;
+      border: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .ach-card .ach-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .ach-card .ach-info .ach-name {
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 2px;
+    }
+
+    .ach-card .ach-info .ach-desc {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .ach-card.locked {
+      opacity: 0.35;
+    }
+
+    .ach-card.locked .ach-icon {
+      background: #f0f0f0;
+    }
+
+    
 
   </style>
 </head>
@@ -231,7 +394,17 @@
     </div>
   </div>
 
+  <!-- 成就弹出提示（右下角） -->
+  <div class="ach-popup" id="achPopup">
+    <div class="ach-popup-header">
+      <div class="ach-popup-icon" id="achPopupIcon"></div>
+      <div class="ach-popup-title" id="achPopupName"></div>
+    </div>
+    <div class="ach-popup-desc" id="achPopupDesc"></div>
+  </div>
+
   <script src="banks.js"></script>
+  <script src="achievements.js"></script>
   <script>
     // ========== 通用面板 ==========
     function showPanel(id) {
@@ -261,25 +434,57 @@
       showPanel('otherSub');
     }
 
+    // ========== 成就弹窗（右下角滑动） ==========
+    var achPopupTimer = null;
+
+    function showAchievementPopup(achId) {
+      var def = ACHIEVEMENTS.DEFS.find(function (d) { return d.id === achId; });
+      if (!def) return;
+      if (achPopupTimer) clearTimeout(achPopupTimer);
+
+      var popup = document.getElementById('achPopup');
+      document.getElementById('achPopupIcon').innerHTML = '<img src="' + def.icon + '" alt="">';
+      document.getElementById('achPopupName').textContent = def.name;
+      document.getElementById('achPopupDesc').textContent = def.desc;
+      popup.classList.remove('hide-slide');
+
+      // 显示
+      popup.classList.add('show');
+
+      // 3秒后自动隐藏
+      achPopupTimer = setTimeout(function () {
+        popup.classList.remove('show');
+        popup.classList.add('hide-slide');
+        setTimeout(function () {
+          popup.classList.remove('hide-slide');
+        }, 300);
+      }, 3000);
+    }
+
     // ========== 成就面板 ==========
     function showAchievements() {
+      var allDefs = ACHIEVEMENTS.DEFS;
+      var html = '';
+      for (var i = 0; i < allDefs.length; i++) {
+        var d = allDefs[i];
+        var isUnlocked = ACHIEVEMENTS.isUnlocked(d.id);
+        html += '<div class="ach-card' + (isUnlocked ? '' : ' locked') + '">';
+        html += '<div class="ach-icon"><img src="' + (isUnlocked ? d.icon : ACHIEVEMENTS.getLockIcon()) + '" alt=""></div>';
+        html += '<div class="ach-info"><div class="ach-name">' + (isUnlocked ? d.name : '???') + '</div>';
+        html += '<div class="ach-desc">' + (isUnlocked ? d.desc : '尚未解锁') + '</div></div>';
+        html += '</div>';
+      }
+      document.getElementById('achContent').innerHTML = html;
       showPanel('achievementsPanel');
     }
 
-    // 为所有子面板、题库面板、小游戏面板、成就面板绑定遮罩点击关闭
-    ['startGameSub', 'otherSub', 'achievementsPanel', 'bankOverlay', 'minigameOverlay'].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) {
-        el.addEventListener('click', function (e) {
-          if (e.target === this) closePanel(id);
-        });
-      }
-    });
-
-    // ========== 题库选择 ==========
-    var currentBank = (function () {
-      try { return localStorage.getItem('selected_bank') || '题库1--通用（并非）'; }
-      catch (e) { return '题库1--通用（并非）'; }
+    // ========== 题库多选 ==========
+    var selectedBanks = (function () {
+      try {
+        var saved = JSON.parse(localStorage.getItem('selected_banks') || 'null');
+        if (saved && saved.length > 0) return saved;
+      } catch (e) {}
+      return ['题库1--通用（并非）'];
     })();
 
     function showBankSelect() {
@@ -294,28 +499,51 @@
       var listHtml = '';
       for (var i = 0; i < bankNames.length; i++) {
         var name = bankNames[i];
-        var isCurrent = (name === currentBank);
-        listHtml += '<button class="select-item' + (isCurrent ? ' selected' : '') + '" onclick="selectBank(\'' + name + '\')">' + name + '</button>';
+        var isSelected = (selectedBanks.indexOf(name) !== -1);
+        listHtml += '<div class="bank-select-item' + (isSelected ? ' selected' : '') + '" onclick="toggleBank(\'' + name.replace(/'/g, "\\'") + '\')">';
+        listHtml += '<span class="bank-name">' + name + '</span>';
+        listHtml += '<span class="bank-checkbox">' + (isSelected ? '✓' : '') + '</span>';
+        listHtml += '</div>';
       }
       document.getElementById('bankList').innerHTML = listHtml;
       showPanel('bankOverlay');
     }
 
-    function selectBank(name) {
-      currentBank = name;
-      try { localStorage.setItem('selected_bank', name); } catch (e) {}
-      showBankSelect(); // 刷新面板高亮
+    function toggleBank(name) {
+      var idx = selectedBanks.indexOf(name);
+      if (idx === -1) {
+        selectedBanks.push(name);
+      } else {
+        selectedBanks.splice(idx, 1);
+      }
+      try { localStorage.setItem('selected_banks', JSON.stringify(selectedBanks)); } catch (e) {}
+      showBankSelect(); // 刷新面板
     }
 
     function confirmBankAndStart() {
+      if (selectedBanks.length === 0) {
+        alert('请至少选择一个题库！');
+        return;
+      }
       closePanel('bankOverlay');
       doStartGame();
     }
 
+    // 为所有子面板、题库面板、小游戏面板、成就面板绑定遮罩点击关闭
+    ['startGameSub', 'otherSub', 'achievementsPanel', 'bankOverlay', 'minigameOverlay'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('click', function (e) {
+          if (e.target === this) closePanel(id);
+        });
+      }
+    });
+
     // ========== 小游戏选择 ==========
     var MINIGAMES = [
       { id: 'minigame1', name: '霓虹跑酷', path: 'minigame1/index.html' },
-      { id: 'minigame2', name: '霓虹飞驰', path: 'minigame2/index.html' }
+      { id: 'minigame2', name: '霓虹飞驰', path: 'minigame2/index.html' },
+      { id: 'minigame3', name: '精灵大作战', path: 'minigame3/index.html' }
     ];
 
     function showMinigameSelect() {
@@ -329,8 +557,15 @@
     }
 
     function launchMinigame(path) {
+      // 成就检测：小游戏爱好者
+      var justUnlocked = ACHIEVEMENTS.unlock('first_minigame');
       localStorage.removeItem('quiz_returning');
-      window.location.href = path;
+      if (justUnlocked) {
+        showAchievementPopup('first_minigame');
+        setTimeout(function () { window.location.href = path; }, 1200);
+      } else {
+        window.location.href = path;
+      }
     }
 
     // ========== 开始游戏 ==========
@@ -344,12 +579,17 @@
         localStorage.removeItem('quiz_bonus_time');
         localStorage.removeItem('quiz_minigame_history');
         localStorage.removeItem('quiz_minigame_index');
+        localStorage.removeItem('quiz_session_achievements');
+
+        // 重置本次会话成就记录
+        ACHIEVEMENTS.resetSession();
 
         var gameState = {
           currentQuestionIndex: 0,
           correctQuestions: [],
           wrongQuestions: [],
           timeLeft: 60,
+          initialTime: 60,
           answeredCount: 0
         };
         localStorage.setItem('quiz_state', JSON.stringify(gameState));
@@ -360,6 +600,13 @@
     }
 
     function goTo(url) {
+      // 追踪说明书爱好者成就
+      if (url === 'instructions.html' && !ACHIEVEMENTS.isUnlocked('instructions')) {
+        ACHIEVEMENTS.unlock('instructions');
+        showAchievementPopup('instructions');
+        setTimeout(function () { window.location.href = url; }, 1200);
+        return;
+      }
       window.location.href = url;
     }
   </script>
