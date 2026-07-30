@@ -287,9 +287,9 @@
 
   function calcBonusTime(s) {
     var bonus = 0;
-    if (s >= 10000) bonus = 15;
-    else if (s >= 5000) bonus = 10;
-    else if (s >= 2500) bonus = 5;
+    if (s >= 5000) bonus = 15;
+    else if (s >= 2000) bonus = 10;
+    else if (s >= 1000) bonus = 5;
     return bonus;
   }
 
@@ -308,7 +308,20 @@
     if (cheatBuffer.indexOf('mafuyu') >= 0) {
       cheatBuffer = '';
       score += 10000;
-      gameOver();
+      if (state === 'playing') {
+        gameOver();
+      } else {
+        // 非进行中状态：直接结束
+        if (state === 'start') {
+          // 需要先初始化一些状态再结束
+          initScene();
+          initPlayer();
+          score = 10000;
+        }
+        state = 'over';
+        if (running) { running = false; if (animId) cancelAnimationFrame(animId); }
+        showEndScreen();
+      }
       return;
     }
     if (cheatBuffer.indexOf('invincible') >= 0) {
@@ -368,8 +381,17 @@
     $('btn-exit-confirm').addEventListener('click', showExitConfirm);
     $('btn-exit-yes').addEventListener('click', doExitGame);
     $('btn-exit-no').addEventListener('click', hideExitConfirm);
-    // 主页返回答题主页
-    $('btn-home-quiz').addEventListener('click', () => { window.location.href = '../quiz.html'; });
+    // 主页返回答题/返回主页
+    var homeQuizBtn = $('btn-home-quiz');
+    if (homeQuizBtn) {
+      if (fromQuiz) {
+        homeQuizBtn.textContent = '返回答题页面';
+        homeQuizBtn.addEventListener('click', function () { returnToQuiz(0); });
+      } else {
+        homeQuizBtn.textContent = '返回主页';
+        homeQuizBtn.addEventListener('click', function () { window.location.href = '../index.html'; });
+      }
+    }
   }
 
   // ================= 输入 =================
@@ -569,21 +591,26 @@
     $('overlay-exit-confirm').classList.add('hidden');
     $('overlay-pause').classList.add('hidden');
 
-    // 根据入口显示不同按钮
+    // 统一返回按钮：fromQuiz 时全部显示"返回答题"，否则全部显示"返回主页"
     var bonus = calcBonusTime(finalScore);
+    var retQuizBtn = $('btn-return-quiz');
+    var retHomeBtn = $('btn-return-home');
     if (fromQuiz) {
-      // 从答题进入：隐藏再来一局，显示返回答题
+      // 从答题进入：隐藏再来一局，两个返回按钮都改为"返回答题（+X秒）"
       $('btn-restart').style.display = 'none';
-      var retBtn = $('btn-return-quiz');
-      if (retBtn) {
-        retBtn.style.display = '';
-        retBtn.textContent = '返回答题（+' + bonus + '秒）';
+      if (retQuizBtn) {
+        retQuizBtn.style.display = '';
+        retQuizBtn.textContent = '返回答题（+' + bonus + '秒）';
       }
+      if (retHomeBtn) retHomeBtn.style.display = 'none';
     } else {
-      // 从首页进入：显示再来一局，隐藏返回答题
+      // 从首页进入：显示再来一局，两个返回按钮都改为"返回主页"
       $('btn-restart').style.display = '';
-      var retBtn = $('btn-return-quiz');
-      if (retBtn) retBtn.style.display = 'none';
+      if (retQuizBtn) retQuizBtn.style.display = 'none';
+      if (retHomeBtn) {
+        retHomeBtn.style.display = '';
+        retHomeBtn.textContent = '返回主页';
+      }
     }
 
     setTimeout(() => $('overlay-over').classList.remove('hidden'), 700);
