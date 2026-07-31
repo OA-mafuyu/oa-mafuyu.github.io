@@ -25,6 +25,28 @@ sprMonster.onload = () => {
 sprMonster.onerror = () => { sprMonsterReady = false; };
 sprMonster.src = 'images/monster-mushroom.png';
 
+// ---- 射击怪（雪山）精灵图 ----
+const sprSniperStand = new Image();
+let sprSniperStandReady = false;
+sprSniperStand.onload = () => { sprSniperStandReady = true; };
+sprSniperStand.onerror = () => { sprSniperStandReady = false; };
+sprSniperStand.src = 'images/snow/stand.png';
+
+const sprSniperAttack = new Image();
+let sprSniperAttackReady = false;
+sprSniperAttack.onload = () => { sprSniperAttackReady = true; };
+sprSniperAttack.onerror = () => { sprSniperAttackReady = false; };
+sprSniperAttack.src = 'images/snow/attack.png';
+
+const sprSniperArrow = new Image();
+let sprSniperArrowReady = false;
+sprSniperArrow.onload = () => { sprSniperArrowReady = true; };
+sprSniperArrow.onerror = () => { sprSniperArrowReady = false; };
+sprSniperArrow.src = 'images/snow/arrow.png';
+
+// ---- 射击怪箭矢数组 ----
+const sniperArrows = []; // { x, y, vx, facingRight, damage, time }
+
 // ---- 跑动动画帧（run1→run4 循环）----
 const _monsterRunFrames = [];       // [Image, Image, Image, Image]
 let _monsterRunLoaded = 0;
@@ -207,6 +229,74 @@ function trySpawnWave(player) {
   _spawnTimer = Date.now();
 }
 
+// ---- 射击怪系统（雪山场景）----
+
+let _lastSniperSpawn = 0;
+
+/** 创建一只射击怪 */
+function createSniper(x, y) {
+  return {
+    x: x,
+    y: y,
+    size: CONFIG.SNIPER_SIZE,
+    hp: CONFIG.SNIPER_HP,
+    maxHp: CONFIG.SNIPER_HP,
+    alive: true,
+    vy: 0,
+    isOnGround: true,
+    facingRight: true,
+    onLadder: false,
+    _type: 'sniper',
+    _nextShootTime: Date.now() + 2000, // 首次延迟 2s，给玩家准备时间
+    _charging: false,
+    _chargeStart: 0,
+    _hurtFlash: 0,
+    _knockbackVx: 0,
+    _knockbackTime: 0,
+    _frozenUntil: 0,
+    _prevX: x,
+    _animFrame: 0,
+    _animTimer: 0,
+  };
+}
+
+/** 找射击怪刷怪位置：只能在下层，不能离主控太近 */
+function findSniperSpawnPos(player) {
+  const px = player.x + player.size / 2;
+  const margin = 60;
+  const maxX = MAP_W - CONFIG.SNIPER_SIZE - margin;
+  const minX = margin;
+  const minDist = CONFIG.SNIPER_SPAWN_MIN_DIST;
+  const inset = CONFIG.FOOT_INSET || 0;
+  const lowerY = CONFIG.LOWER_GROUND_Y - CONFIG.SNIPER_SIZE + inset;
+
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const tx = minX + Math.random() * (maxX - minX);
+    if (Math.abs(tx + CONFIG.SNIPER_SIZE / 2 - px) < minDist) continue;
+    return { x: tx, y: lowerY };
+  }
+  // 兜底：左下角
+  return { x: margin, y: lowerY };
+}
+
+/** 射击怪刷怪调度 */
+function trySpawnSniper(player) {
+  if (gameScene !== 'snow') return;
+  if (!player || player.hp <= 0) return;
+
+  const now = Date.now();
+  if (_lastSniperSpawn === 0) { _lastSniperSpawn = now; return; }
+  if (now - _lastSniperSpawn < CONFIG.SNIPER_SPAWN_INTERVAL) return;
+
+  // 限制场上射击怪数量（最多 3 只）
+  const sniperCount = monsters.filter(m => m._type === 'sniper' && m.alive).length;
+  if (sniperCount >= 3) return;
+
+  const pos = findSniperSpawnPos(player);
+  monsters.push(createSniper(pos.x, pos.y));
+  _lastSniperSpawn = now;
+}
+
 // ---- 单只 AI ----
 
 /** 按怪物所在层平台边缘钳制 x 坐标，防止走出可见平台 */
@@ -234,6 +324,9 @@ function clampToViewport(m) {
 function updateSingleMonsterAI(m, player) {
   if (!m.alive || player.hp <= 0) return;
 
+  // 射击怪走独立 AI
+  if (m._type === 'sniper') { updateSniperAI(m, player); return; }
+
   // 记录本帧开始时的位置，供 drawMonster 判断跑动动画
   m._prevX = m.x;
 
@@ -243,16 +336,16 @@ function updateSingleMonsterAI(m, player) {
   if (now < (m._frozenUntil || 0)) {
     // 击退处理（冰冻中仍可被普攻打飞）
     if (now < m._knockbackTime) {
-      m.x += m._knockbackVx;
-      m._knockbackVx *= 0.82;
+      m.x += m._knockbackVx * globalDT;
+      m._knockbackVx *= Math.pow(0.82, globalDT);
       clampMonsterToPlatform(m);
       clampToViewport(m);
     }
     // 重力
     if (!m.onLadder) {
-      m.vy += CONFIG.GRAVITY;
+      m.vy += CONFIG.GRAVITY * globalDT;
       if (m.vy > 20) m.vy = 20;
-      m.y += m.vy;
+      m.y += m.vy * globalDT;
       m.isOnGround = false;
       const landed = tryLandOnPlatform(m, m.size);
       if (landed) { m.isOnGround = true; }
@@ -272,17 +365,17 @@ function updateSingleMonsterAI(m, player) {
 
   // ---- 击退处理 ----
   if (now < m._knockbackTime) {
-    m.x += m._knockbackVx;
-    m._knockbackVx *= 0.82;
+    m.x += m._knockbackVx * globalDT;
+    m._knockbackVx *= Math.pow(0.82, globalDT);
     clampMonsterToPlatform(m);
     clampToViewport(m);
     m.onLadder = false;
     m._ladderTarget = null;
     m._ladderTargetSetAt = 0;
 
-    m.vy += CONFIG.GRAVITY;
+    m.vy += CONFIG.GRAVITY * globalDT;
     if (m.vy > 20) m.vy = 20;
-    m.y += m.vy;
+    m.y += m.vy * globalDT;
     m.isOnGround = false;
     const landed = tryLandOnPlatform(m, m.size);
     if (landed) { m.isOnGround = true; }
@@ -353,14 +446,14 @@ function updateSingleMonsterAI(m, player) {
         // 在梯子上 → 往上爬，不需要任何条件判断
         m._ladderTarget = ladder;
         m._ladderTargetSetAt = now;
-        m.y -= CONFIG.CLIMB_SPEED;
+        m.y -= CONFIG.CLIMB_SPEED * globalDT;
         m.vy = 0;
         m.onLadder = true;
         m._climbing = true;
         // 吸附到梯子中心
         const tx = ladder.x + ladder.w / 2;
         if (Math.abs(mx - tx) > 2) {
-          m.x += (tx > mx ? 1 : -1) * Math.min(CONFIG.MONSTER_SPEED, Math.abs(mx - tx));
+          m.x += (tx > mx ? 1 : -1) * Math.min(CONFIG.MONSTER_SPEED * globalDT, Math.abs(mx - tx));
         }
         if (m.y <= targetY) {
           m.y = targetY;
@@ -381,7 +474,7 @@ function updateSingleMonsterAI(m, player) {
           const dist = Math.abs(mx - tx);
           if (dist > 8) {
             const dir = tx > mx ? 1 : -1;
-            m.x += dir * CONFIG.MONSTER_SPEED;
+            m.x += dir * CONFIG.MONSTER_SPEED * globalDT;
             m.facingRight = dir > 0;
           }
           m._ladderTarget = nearest;
@@ -395,13 +488,13 @@ function updateSingleMonsterAI(m, player) {
         // 在梯子上 → 往下爬
         m._ladderTarget = ladder;
         m._ladderTargetSetAt = now;
-        m.y += CONFIG.CLIMB_SPEED;
+        m.y += CONFIG.CLIMB_SPEED * globalDT;
         m.vy = 0;
         m.onLadder = true;
         m._climbing = true;
         const tx = ladder.x + ladder.w / 2;
         if (Math.abs(mx - tx) > 2) {
-          m.x += (tx > mx ? 1 : -1) * Math.min(CONFIG.MONSTER_SPEED, Math.abs(mx - tx));
+          m.x += (tx > mx ? 1 : -1) * Math.min(CONFIG.MONSTER_SPEED * globalDT, Math.abs(mx - tx));
         }
         if (m.y >= targetY) {
           m.y = targetY;
@@ -422,7 +515,7 @@ function updateSingleMonsterAI(m, player) {
           const dist = Math.abs(mx - tx);
           if (dist > 8) {
             const dir = tx > mx ? 1 : -1;
-            m.x += dir * CONFIG.MONSTER_SPEED;
+            m.x += dir * CONFIG.MONSTER_SPEED * globalDT;
             m.facingRight = dir > 0;
           }
           m._ladderTarget = nearest;
@@ -447,7 +540,7 @@ function updateSingleMonsterAI(m, player) {
     // 同层直接追主控
     let vx = 0;
     if (Math.abs(dx) > 6) {
-      vx = (dx > 0 ? 1 : -1) * CONFIG.MONSTER_SPEED;
+      vx = (dx > 0 ? 1 : -1) * CONFIG.MONSTER_SPEED * globalDT;
       m.facingRight = dx > 0;
     }
     m.x += vx;
@@ -457,9 +550,9 @@ function updateSingleMonsterAI(m, player) {
 
   // ---- 重力 ----
   if (!m.onLadder) {
-    m.vy += CONFIG.GRAVITY;
+    m.vy += CONFIG.GRAVITY * globalDT;
     if (m.vy > 20) m.vy = 20;
-    m.y += m.vy;
+    m.y += m.vy * globalDT;
     m.isOnGround = false;
     const landed = tryLandOnPlatform(m, m.size);
     if (landed) { m.isOnGround = true; }
@@ -508,6 +601,220 @@ function updateSingleMonsterAI(m, player) {
   }
 }
 
+// ---- 射击怪 AI（站立不动，面向主控，每 5s 射一箭）----
+
+function updateSniperAI(m, player) {
+  if (!m.alive || player.hp <= 0) return;
+  const now = Date.now();
+
+  // 面向主控
+  const mx = m.x + m.size / 2;
+  const px = player.x + player.size / 2;
+  m.facingRight = px > mx;
+
+  // 冰冻期间不动
+  if (now < (m._frozenUntil || 0)) {
+    if (now < m._knockbackTime) {
+      m.x += m._knockbackVx * globalDT;
+      m._knockbackVx *= Math.pow(0.82, globalDT);
+    }
+    m.vy += CONFIG.GRAVITY * globalDT;
+    if (m.vy > 20) m.vy = 20;
+    m.y += m.vy * globalDT;
+    m.isOnGround = false;
+    tryLandOnPlatform(m, m.size);
+    // 防穿地板
+    if (m.y + m.size >= CONFIG.LOWER_GROUND_Y && m.vy >= 0) {
+      m.y = CONFIG.LOWER_GROUND_Y - m.size + (CONFIG.FOOT_INSET || 0);
+      m.vy = 0; m.isOnGround = true;
+    }
+    return;
+  }
+
+  // 击退处理
+  if (now < m._knockbackTime) {
+    m.x += m._knockbackVx * globalDT;
+    m._knockbackVx *= Math.pow(0.82, globalDT);
+    clampToViewport(m);
+    m.vy += CONFIG.GRAVITY * globalDT;
+    if (m.vy > 20) m.vy = 20;
+    m.y += m.vy * globalDT;
+    tryLandOnPlatform(m, m.size);
+    if (m.y + m.size >= CONFIG.LOWER_GROUND_Y && m.vy >= 0) {
+      m.y = CONFIG.LOWER_GROUND_Y - m.size + (CONFIG.FOOT_INSET || 0);
+      m.vy = 0; m.isOnGround = true;
+    }
+    return;
+  }
+
+  // 重力（始终生效，防止浮空）
+  m.vy += CONFIG.GRAVITY * globalDT;
+  if (m.vy > 20) m.vy = 20;
+  m.y += m.vy * globalDT;
+  const landed = tryLandOnPlatform(m, m.size);
+  if (landed) { m.isOnGround = true; }
+  if (m.y + m.size >= CONFIG.LOWER_GROUND_Y && m.vy >= 0) {
+    m.y = CONFIG.LOWER_GROUND_Y - m.size + (CONFIG.FOOT_INSET || 0);
+    m.vy = 0; m.isOnGround = true;
+  }
+
+  // 射击逻辑
+  if (now >= m._nextShootTime) {
+    if (!m._charging) {
+      // 开始蓄力
+      m._charging = true;
+      m._chargeStart = now;
+    } else if (now - m._chargeStart >= 500) {
+      // 蓄力完成，射箭
+      fireSniperArrow(m, player);
+      m._charging = false;
+      m._nextShootTime = now + CONFIG.SNIPER_SHOOT_INTERVAL;
+    }
+  }
+}
+
+/** 射击怪发射箭矢 */
+function fireSniperArrow(m, player) {
+  const now = Date.now();
+  const facingRight = m.facingRight;
+  const s = m.size;
+
+  // 箭矢起始位置：怪物手中位置（约为精灵高度的 35% 处）
+  const arrowX = m.x + s / 2;
+  const arrowY = m.y + s * 0.32;
+  const vx = facingRight ? CONFIG.SNIPER_ARROW_SPEED : -CONFIG.SNIPER_ARROW_SPEED;
+
+  sniperArrows.push({
+    x: arrowX,
+    y: arrowY,
+    vx: vx,
+    facingRight: facingRight,
+    damage: CONFIG.SNIPER_ARROW_DAMAGE,
+    time: now,
+  });
+
+  // 破空声
+  if (typeof playSniperArrowSound === 'function') playSniperArrowSound();
+}
+
+/** 更新射击怪箭矢位置 */
+function updateSniperArrows() {
+  const now = Date.now();
+  for (let i = sniperArrows.length - 1; i >= 0; i--) {
+    const a = sniperArrows[i];
+    a.x += a.vx * globalDT;
+    // 超出地图边界或超时（5 秒）
+    if (a.x < -50 || a.x > MAP_W + 50 || now - a.time > 5000) {
+      sniperArrows.splice(i, 1);
+    }
+  }
+}
+
+/** 绘制射击怪箭矢 */
+function drawSniperArrows(ctx) {
+  // 箭矢高度 = 雪山怪身高 260 的一半 = 130px
+  const ARROW_H = 130;
+  const ARROW_W = sprSniperArrowReady
+    ? (sprSniperArrow.naturalWidth / sprSniperArrow.naturalHeight) * ARROW_H
+    : 94;
+
+  for (const a of sniperArrows) {
+    ctx.save();
+    ctx.translate(a.x, a.y);
+
+    // 深蓝色外发光（双层加强）
+    ctx.shadowColor = '#1166cc';
+    ctx.shadowBlur = 18;
+
+    if (!sprSniperArrowReady) {
+      ctx.fillStyle = '#cc3333';
+      ctx.fillRect(-ARROW_W / 2, -ARROW_H / 2, ARROW_W, ARROW_H);
+    } else {
+      if (!a.facingRight) ctx.scale(-1, 1);
+      ctx.drawImage(sprSniperArrow, -ARROW_W / 2, -ARROW_H / 2, ARROW_W, ARROW_H);
+    }
+    ctx.restore();
+  }
+}
+
+/** 射击怪箭矢碰撞玩家检测 */
+function checkSniperArrowCollision(player) {
+  if (player.hp <= 0) return;
+  const now = Date.now();
+  for (let i = sniperArrows.length - 1; i >= 0; i--) {
+    const a = sniperArrows[i];
+    // 用箭头中心点检测
+    const arrowCenterX = a.x;
+    const arrowCenterY = a.y;
+    if (arrowCenterX >= player.x && arrowCenterX <= player.x + player.size &&
+        arrowCenterY >= player.y && arrowCenterY <= player.y + player.size) {
+      // 命中
+      if (now > player.invincibleUntil) {
+        player.hp = Math.max(0, player.hp - a.damage);
+        player.invincibleUntil = now + CONFIG.INVINCIBLE_DURATION;
+      }
+      sniperArrows.splice(i, 1);
+    }
+  }
+}
+
+/** 绘制射击怪（站立/蓄力动画） */
+function drawSniperMonster(ctx, m, x, y, s) {
+  const frozen = Date.now() < (m._frozenUntil || 0);
+  const flashing = Date.now() < m._hurtFlash;
+
+  ctx.save();
+  ctx.translate(x + s / 2, y + s / 2);
+  if (m.facingRight) ctx.scale(-1, 1);  // 默认精灵朝左，朝右时翻转
+
+  if (sprSniperStandReady && sprSniperAttackReady) {
+    let img = sprSniperStand;
+    if (flashing && !frozen) {
+      ctx.globalAlpha = 0.6 + 0.3 * Math.sin(Date.now() / 40);
+    }
+    if (frozen) {
+      ctx.globalAlpha = 0.85;
+      // 冰冻蓝色调
+      ctx.drawImage(sprSniperStand, -s / 2, -s / 2, s, s);
+      if (m._charging && m._chargeStart) {
+        const p = (Date.now() - m._chargeStart) / 500;
+        ctx.globalAlpha = 0.4 + p * 0.3;
+        ctx.drawImage(sprSniperAttack, -s / 2, -s / 2, s, s);
+      }
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = '#88ccff';
+      ctx.fillRect(-s / 2, -s / 2, s, s);
+      ctx.strokeStyle = '#aaddff';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(-s / 2, -s / 2, s, s);
+    } else if (m._charging && m._chargeStart) {
+      // 蓄力中：交替闪烁
+      const p = Math.min(1, (Date.now() - m._chargeStart) / 500);
+      const blink = Math.sin(Date.now() / 80) > 0;
+      ctx.drawImage(sprSniperStand, -s / 2, -s / 2, s, s);
+      if (blink) ctx.drawImage(sprSniperAttack, -s / 2, -s / 2, s, s);
+      else {
+        ctx.globalAlpha = 0.35 + p * 0.2;
+        ctx.drawImage(sprSniperAttack, -s / 2, -s / 2, s, s);
+      }
+    } else {
+      ctx.drawImage(sprSniperStand, -s / 2, -s / 2, s, s);
+    }
+    ctx.globalAlpha = 1;
+  } else {
+    // 后备绘制
+    ctx.fillStyle = flashing ? '#ffffff' : (frozen ? '#88ccff' : '#8B4513');
+    ctx.fillRect(-s / 2, -s / 2, s, s);
+    ctx.fillStyle = '#654321';
+    if (m._charging && m._chargeStart) {
+      ctx.font = 'bold 20px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('🎯', 0, -s * 0.1);
+    }
+  }
+  ctx.restore();
+}
+
 // ---- 全体更新 ----
 
 function updateMonsterAI(player) {
@@ -545,6 +852,12 @@ function drawMonster(ctx) {
     const x = m.x;
     const y = m.y;
 
+    // ---- 射击怪绘制 ----
+    if (m._type === 'sniper') {
+      drawSniperMonster(ctx, m, x, y, s);
+      continue;
+    }
+
     const frozen = Date.now() < (m._frozenUntil || 0);
     const flashing = Date.now() < m._hurtFlash;
 
@@ -560,7 +873,7 @@ function drawMonster(ctx) {
 
       // 更新动画帧：跑动时切换，run4（帧3）多停留一帧（200ms）
       if (isMoving) {
-        m._animTimer += 16;
+        m._animTimer += 16.667 * globalDT;
         const threshold = m._animFrame === 3 ? 200 : 100;
         if (m._animTimer >= threshold) { m._animTimer = 0; m._animFrame = (m._animFrame + 1) % 4; }
       } else {
@@ -638,6 +951,7 @@ function drawMonster(ctx) {
   // ---- 绘制尸体（旋转倒地 + 闪两下消失）----
   for (const m of monsters) {
     if (m.alive || !m.deathTime) continue;
+    if (m._type === 'sniper') continue; // 射击怪死亡用简单粒子，不走蘑菇尸体逻辑
     const age = Date.now() - m.deathTime;
     if (age > 1000) continue;
 
@@ -714,8 +1028,8 @@ function updateMonsterProjectiles() {
   const now = Date.now();
   for (let i = monsterProjectiles.length - 1; i >= 0; i--) {
     const p = monsterProjectiles[i];
-    p.x += p.vx;
-    p.y += p.vy;
+    p.x += p.vx * globalDT;
+    p.y += p.vy * globalDT;
 
     // 超出世界边界
     if (p.x < -40 || p.x > MAP_W + 40 || p.y < -40 || p.y > MAP_H + 40) {
@@ -785,7 +1099,7 @@ function checkProjectilePlayerCollision(player) {
   for (let i = monsterProjectiles.length - 1; i >= 0; i--) {
     const p = monsterProjectiles[i];
     const dist = Math.hypot(px - p.x, py - p.y);
-    if (dist < player.size * 0.5 + p.radius) {
+    if (dist < player.size * 0.25 + p.radius) {
       takePlayerDamage(p.damage);
       effects.push({ type: 'flash', time: Date.now(), duration: 100, color: '#9b59b6' });
       // 命中爆炸粒子

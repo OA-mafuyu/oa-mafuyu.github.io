@@ -15,6 +15,7 @@ body {
   color: #fff;
   font-family: monospace;
   overflow: hidden;
+  filter: brightness(1.2)
 }
 
 h1 {
@@ -299,9 +300,27 @@ canvas {
   color: rgba(255, 212, 80, 0.65);
 }
 
+/* 移动按键：和攻击一样大，但保持白色 */
+.key-move {
+  width: 72px;
+  height: 72px;
+}
+
+.key-move .key-sub {
+  font-size: 22px;
+  font-weight: bold;
+}
+
 /* 开始游戏按钮 */
+.splash-btns {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
 .splash-start-btn {
-  display: block;
+  display: inline-block;
   margin: 0 auto 12px;
   padding: 16px 52px;
   font-family: monospace;
@@ -325,6 +344,19 @@ canvas {
 
 .splash-start-btn:active {
   transform: scale(0.97);
+}
+
+/* 雪山直达按钮 */
+.splash-btn-snow {
+  background: #7ec8e3;
+  color: #1a2a3a;
+  box-shadow: 0 0 24px rgba(126, 200, 227, 0.3);
+  letter-spacing: 6px;
+}
+
+.splash-btn-snow:hover {
+  background: #a0d8f0;
+  box-shadow: 0 0 36px rgba(126, 200, 227, 0.5);
 }
 
 .splash-enter-hint {
@@ -462,23 +494,32 @@ canvas {
 }
 
 /* ========== 返回主页按钮（按键提示页） ========== */
+.splash-btns {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
 .splash-home-btn {
-  display: block;
-  margin: 14px auto 0;
-  padding: 8px 20px;
+  display: inline-block;
+  margin: 0 auto 12px;
+  padding: 16px 52px;
   font-family: monospace;
-  font-size: 14px;
-  letter-spacing: 3px;
-  color: rgba(255, 255, 255, 0.35);
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 6px;
+  color: #0d1117;
+  background: #fff;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0);
 }
 
 .splash-home-btn:hover {
-  color: rgba(255, 255, 255, 0.7);
-  border-color: rgba(255, 255, 255, 0.35);
-  background: rgba(255, 255, 255, 0.03);
+  background: #ede7c9;
+  box-shadow: 0 0 36px rgba(0, 0, 0, 0);
+  transform: scale(1.04);
 }

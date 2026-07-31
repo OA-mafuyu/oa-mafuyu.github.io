@@ -200,6 +200,58 @@ window.launchGame = function () {
   startGame();
 };
 
+// 直接进雪山
+window._pendingSnowLaunch = false;
+window.launchToSnow = function () {
+  if (gameStarted) return;
+  splashScreen.classList.add('hidden');
+
+  function spawnInitialSnipers() {
+    if (typeof createSniper === 'function' && typeof findSniperSpawnPos === 'function' && typeof player !== 'undefined' && player) {
+      for (let i = 0; i < 1; i++) {
+        const pos = findSniperSpawnPos(player);
+        monsters.push(createSniper(pos.x, pos.y));
+      }
+      if (typeof _lastSniperSpawn !== 'undefined') _lastSniperSpawn = Date.now();
+    }
+  }
+
+  function doSnowLaunch() {
+    if (typeof _snowMapReady !== 'undefined' && _snowMapReady) {
+      if (typeof switchToSnowScene === 'function') switchToSnowScene();
+      if (typeof initAudio === 'function') initAudio();
+      if (typeof startBGM === 'function') startBGM();
+      applyCanvasSize();
+      startGame();
+      spawnInitialSnipers();
+    } else {
+      // 雪山地图还没加载好，轮询等待（最多等 5 秒）
+      window._pendingSnowLaunch = true;
+      var attempts = 0;
+      var check = setInterval(function () {
+        attempts++;
+        if (typeof _snowMapReady !== 'undefined' && _snowMapReady) {
+          clearInterval(check);
+          if (typeof switchToSnowScene === 'function') switchToSnowScene();
+          if (typeof initAudio === 'function') initAudio();
+          if (typeof startBGM === 'function') startBGM();
+          applyCanvasSize();
+          startGame();
+          spawnInitialSnipers();
+        } else if (attempts > 50) {
+          // 5 秒后降级到丛林
+          clearInterval(check);
+          if (typeof initAudio === 'function') initAudio();
+          if (typeof startBGM === 'function') startBGM();
+          applyCanvasSize();
+          startGame();
+        }
+      }, 100);
+    }
+  }
+  doSnowLaunch();
+};
+
 // Canvas 尺寸根据设置决定
 function applyCanvasSize() {
   if (SETTINGS.mapScroll) {
@@ -312,6 +364,23 @@ function startGame() {
   scheduleNextFrame();
 }
 
+/** 把场景重置回丛林 */
+function resetSceneToForest() {
+  gameScene = 'forest';
+  _sceneSwitchedAt = 0;
+  // 重新初始化丛林地图数据
+  if (typeof initMapFromImage === 'function') {
+    mapReady = false;
+    initMapFromImage();
+  }
+  // 重设画布
+  applyCanvasSize();
+  // 清空射击怪箭矢
+  if (typeof sniperArrows !== 'undefined') sniperArrows.length = 0;
+  // 重置射击怪刷怪计时
+  if (typeof _lastSniperSpawn !== 'undefined') _lastSniperSpawn = 0;
+}
+
 function restartGame() {
   // 递增循环版本号，使所有旧 gameLoop 实例立即退出
   _loopGen++;
@@ -335,9 +404,13 @@ function restartGame() {
   resetSpawner();
   // 重置战斗状态
   resetBattleState();
+  // 重置场景为丛林
+  resetSceneToForest();
   // 重新开始
   gameOver = false;
   gameStarted = true;
+  _lastFrameTime = 0;
+  globalDT = 1;
 
   // 重新显示右上角暂停按钮
   document.getElementById('pause-btn').classList.add('visible');
@@ -387,10 +460,12 @@ function updateCamera() {
 // ---------- 绘制（上下文已平移相机偏移，直接用世界坐标画）----------
 
 function drawMapOnScreen(ctx) {
-  if (mapReady) {
-    const origW = mapImg.naturalWidth;
-    ctx.drawImage(mapImg, 0, 0);
-    ctx.drawImage(mapImg, origW, 0);
+  const img = typeof getCurrentMapImg === 'function' ? getCurrentMapImg() : mapImg;
+  const ready = typeof isCurrentMapReady === 'function' ? isCurrentMapReady() : mapReady;
+  if (ready && img.complete && img.naturalWidth > 0) {
+    const origW = img.naturalWidth;
+    ctx.drawImage(img, 0, 0);
+    ctx.drawImage(img, origW, 0);
   } else {
     ctx.fillStyle = '#1a1a2e';
     ctx.fillRect(0, 0, MAP_W, MAP_H);
@@ -454,11 +529,19 @@ function drawPlayerOnScreen(ctx) {
 
 // 当前循环的版本号，由 startGame/restartGame 传入
 let _currentLoopGen = 0;
+let _lastFrameTime = 0;
 
 function scheduleNextFrame() {
   const gen = _currentLoopGen;
-  const loop = () => {
+  const loop = (timestamp) => {
     if (_loopGen !== gen) return;
+    // 计算帧率补偿系数（以 60fps = 16.67ms 为基准）
+    if (_lastFrameTime > 0) {
+      globalDT = (timestamp - _lastFrameTime) / 16.667;
+      // 防止大帧间隔（如切标签页回来后）导致瞬移，限制最大 3x
+      if (globalDT > 3) globalDT = 3;
+    }
+    _lastFrameTime = timestamp;
     gameLoop();
   };
   requestAnimationFrame(loop);
@@ -484,6 +567,9 @@ function gameLoop() {
   // 刷怪调度
   trySpawnWave(player);
 
+  // 雪山场景：射击怪刷怪
+  if (gameScene === 'snow' && typeof trySpawnSniper === 'function') trySpawnSniper(player);
+
   // 处理玩家攻击（动画+冷却，每帧一次）
   processPlayerAttacks(keys, player);
 
@@ -498,6 +584,25 @@ function gameLoop() {
     if (checkMonsterDeath(m)) {
       killCount++;
       updateKillHUD();
+
+      // 杀敌 20 → 切换雪山场景
+      if (killCount >= 20 && gameScene === 'forest') {
+        if (typeof switchToSnowScene === 'function' && switchToSnowScene()) {
+          // 清空现有怪物（丛林怪不该出现在雪山上）
+          monsters.length = 0;
+          if (typeof resetSpawner === 'function') resetSpawner();
+          // 重置击杀计数刷怪逻辑
+          if (typeof _spawnTimer !== 'undefined') _spawnTimer = Date.now();
+          // 直接刷 2 只雪山射击怪
+          if (typeof createSniper === 'function' && typeof findSniperSpawnPos === 'function') {
+            for (let i = 0; i < 1; i++) {
+              const pos = findSniperSpawnPos(player);
+              monsters.push(createSniper(pos.x, pos.y));
+            }
+            if (typeof _lastSniperSpawn !== 'undefined') _lastSniperSpawn = Date.now();
+          }
+        }
+      }
     }
   }
 
@@ -512,6 +617,10 @@ function gameLoop() {
   // 更新怪物弹道 + 碰撞玩家
   updateMonsterProjectiles();
   checkProjectilePlayerCollision(player);
+
+  // 更新射击怪箭矢 + 碰撞
+  if (typeof updateSniperArrows === 'function') updateSniperArrows();
+  if (typeof checkSniperArrowCollision === 'function') checkSniperArrowCollision(player);
 
   // 冰冻碰撞爆炸检测
   checkFrozenCollision();
@@ -540,9 +649,30 @@ function gameLoop() {
   drawXpOrbs(ctx);
   drawHpOrbs(ctx);
   drawMonsterProjectiles(ctx);
+  if (typeof drawSniperArrows === 'function') drawSniperArrows(ctx);
   drawUI(ctx);
 
   ctx.restore();
+
+  // 雪山场景切换提示
+  if (gameScene === 'snow' && _sceneSwitchedAt > 0) {
+    const sinceSwitch = Date.now() - _sceneSwitchedAt;
+    if (sinceSwitch < 3000) {
+      const alpha = sinceSwitch < 500 ? sinceSwitch / 500 : (1 - (sinceSwitch - 500) / 2500);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#d4f0ff';
+      ctx.font = 'bold 26px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('🏔 闯入雪山！', CONFIG.VIEW_WIDTH / 2, CONFIG.VIEW_HEIGHT / 2 - 20);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '15px monospace';
+      ctx.fillText('新的敌人正在靠近...', CONFIG.VIEW_WIDTH / 2, CONFIG.VIEW_HEIGHT / 2 + 20);
+      ctx.restore();
+    } else {
+      _sceneSwitchedAt = 0; // 3 秒后不再显示
+    }
+  }
 
   // 屏幕固定 UI
   drawPlayerUI(ctx);
@@ -669,6 +799,7 @@ function showEndScreen(titleColor, title, subtitle, subColor) {
   // 隐藏暂停按钮和击杀 HUD
   document.getElementById('pause-btn').classList.remove('visible');
   document.getElementById('hud-kills').classList.remove('visible');
+
 }
 
 function drawPauseScreen() {

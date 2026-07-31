@@ -18,7 +18,7 @@
           <span class="tip-text">怪物A被冰冻后使用普攻把怪A打到怪B身上，可使A死亡、B扣血</span>
         </div>
         <div class="tip-item">
-          <span class="tip-text">由于不可修复的bug怪物不会从梯子往上爬，请尽量在下层平台战斗</span>
+          <span class="tip-text">部分怪不会从梯子往上爬，请尽量在下层战斗</span>
         </div>
         <div class="tip-item">
           <span class="tip-icon">🟡</span>
@@ -37,12 +37,12 @@
         <div class="ctrl-group">
           <span class="ctrl-label">移动</span>
           <div class="keys-row">
-            <span class="keycap key-top">W<span class="key-sub">跳跃</span></span>
+            <span class="keycap key-move key-top">W<span class="key-sub">跳跃</span></span>
           </div>
           <div class="keys-row">
-            <span class="keycap">A<span class="key-sub">左移</span></span>
-            <span class="keycap">S<span class="key-sub">下爬</span></span>
-            <span class="keycap">D<span class="key-sub">右移</span></span>
+            <span class="keycap key-move">A<span class="key-sub">左移</span></span>
+            <span class="keycap key-move">S<span class="key-sub">下爬</span></span>
+            <span class="keycap key-move">D<span class="key-sub">右移</span></span>
           </div>
         </div>
         <div class="ctrl-group">
@@ -58,7 +58,10 @@
         </div>
       </div>
 
-      <button class="splash-start-btn" id="btn-splash-start">开 始 游 戏</button>
+      <div class="splash-btns">
+        <button class="splash-start-btn" id="btn-splash-start">开 始 游 戏</button>
+        <button class="splash-start-btn splash-btn-snow" id="btn-splash-snow">直 奔 雪 山</button>
+      </div>
       <p class="splash-enter-hint">或按 Enter 键</p>
       <button class="splash-home-btn" id="btn-splash-home" onclick="window.location.href='../index.html'">返回主页</button>
     </div>
@@ -97,6 +100,7 @@
   <script>
   (function () {
     var btn = document.getElementById('btn-splash-start');
+    var btnSnow = document.getElementById('btn-splash-snow');
     var gameStarted = false;
 
     function tryLaunch() {
@@ -114,7 +118,18 @@
       }
     }
 
+    function tryLaunchSnow() {
+      if (gameStarted) return;
+      if (typeof window.launchToSnow === 'function') {
+        window.launchToSnow();
+        gameStarted = true;
+      } else {
+        tryLaunch();
+      }
+    }
+
     btn.addEventListener('click', tryLaunch);
+    btnSnow.addEventListener('click', tryLaunchSnow);
     window.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !gameStarted) {
         e.preventDefault();

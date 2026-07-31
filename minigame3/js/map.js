@@ -6,6 +6,42 @@
 const mapImg = new Image();
 mapImg.src = 'images/map.png';
 
+// 雪山地图预加载
+const snowMapImg = new Image();
+snowMapImg.src = 'images/snow/map.png';
+window._snowMapReady = false;
+let _snowMapW = 1280, _snowMapH = 360;
+let _snowPlatforms = [], _snowLadders = [];
+let _snowUpperY = 0, _snowLowerY = 0;
+
+snowMapImg.onload = () => {
+  const origW = snowMapImg.naturalWidth;
+  _snowMapW = origW * 2;
+  _snowMapH = snowMapImg.naturalHeight;
+
+  _snowUpperY = Math.round(_snowMapH * 0.221);
+  _snowLowerY = Math.round(_snowMapH * 0.702);
+  const thick = 18;
+
+  _snowPlatforms = [
+    { x: 0, y: _snowUpperY, w: _snowMapW, h: thick, level: 'upper' },
+    { x: 0, y: _snowLowerY, w: _snowMapW, h: thick, level: 'lower' },
+  ];
+
+  const ladderW = 80;
+  _snowLadders = [
+    { x: Math.round(origW * 0.030), w: ladderW, top: _snowUpperY, bottom: _snowLowerY + thick },
+    { x: Math.round(origW * 0.085), w: ladderW, top: _snowUpperY, bottom: _snowLowerY + thick },
+    { x: Math.round(origW * 0.485), w: ladderW, top: _snowUpperY, bottom: _snowLowerY + thick },
+    { x: origW + Math.round(origW * 0.030), w: ladderW, top: _snowUpperY, bottom: _snowLowerY + thick },
+    { x: origW + Math.round(origW * 0.085), w: ladderW, top: _snowUpperY, bottom: _snowLowerY + thick },
+    { x: origW + Math.round(origW * 0.485), w: ladderW, top: _snowUpperY, bottom: _snowLowerY + thick },
+  ];
+
+  _snowMapReady = true;
+};
+snowMapImg.onerror = () => { _snowMapReady = false; };
+
 let MAP_W = 1280;  // 默认值，图片加载后更新
 let MAP_H = 360;
 let PLATFORMS = [];
@@ -138,4 +174,38 @@ function getEntityLevel(entity, size) {
   const distToUpper = Math.abs(feetY - CONFIG.UPPER_GROUND_Y);
   const distToLower = Math.abs(feetY - CONFIG.LOWER_GROUND_Y);
   return distToUpper < distToLower ? 'upper' : 'lower';
+}
+
+// ---- 场景切换 ----
+
+/** 切换到雪山场景。返回 true 成功，false 雪山地图未就绪 */
+function switchToSnowScene() {
+  if (!_snowMapReady) return false;
+
+  MAP_W = _snowMapW;
+  MAP_H = _snowMapH;
+  PLATFORMS = _snowPlatforms;
+  LADDERS = _snowLadders;
+  CONFIG.UPPER_GROUND_Y = _snowUpperY;
+  CONFIG.LOWER_GROUND_Y = _snowLowerY;
+
+  gameScene = 'snow';
+  _sceneSwitchedAt = Date.now();
+
+  // 切换 BGM 到雪山风格
+  if (typeof setBGMScene === 'function') setBGMScene('snow');
+
+  // 重设画布大小
+  if (typeof applyCanvasSize === 'function') applyCanvasSize();
+
+  return true;
+}
+
+/** 获取当前场景的地图图片（用于绘制） */
+function getCurrentMapImg() {
+  return gameScene === 'snow' ? snowMapImg : mapImg;
+}
+
+function isCurrentMapReady() {
+  return gameScene === 'snow' ? _snowMapReady : mapReady;
 }

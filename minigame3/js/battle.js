@@ -149,16 +149,29 @@ function spawnLightning(player, monster) {
 }
 
 // 大招
-function spawnUltimate(monster) {
-  const mx = monster.x + monster.size / 2;
-  const my = monster.y + monster.size / 2;
-  for (let i = 0; i < 5; i++) {
-    const r = 12 + i * 10;
+function spawnUltimate(player) {
+  const px = player.x + player.size / 2;
+  const py = player.y + player.size / 2;
+  // 大范围冲击波：多层扩散圆环
+  for (let i = 0; i < 6; i++) {
+    const r = 20 + i * 28;
     fxScreen.push({
-      skill: 'i', frame: i, totalFrames: 5,
-      worldX: mx, worldY: my,
+      skill: 'i', frame: i, totalFrames: 6,
+      worldX: px, worldY: py,
       w: r * 2, h: r * 2,
-      time: Date.now() + i * 40, duration: 300, dir: 0,
+      time: Date.now() + i * 50, duration: 400, dir: 0,
+    });
+  }
+  // 地板碎粒向四周飞散
+  for (let i = 0; i < 16; i++) {
+    const angle = (i / 16) * Math.PI * 2;
+    const dist = 30 + Math.random() * 60;
+    fxScreen.push({
+      skill: 'freeze', frame: i, totalFrames: 16,
+      worldX: px + Math.cos(angle) * dist,
+      worldY: py + Math.sin(angle) * dist,
+      w: 5 + Math.random() * 4, h: 5 + Math.random() * 4,
+      time: Date.now() + i * 20, duration: 350, dir: angle,
     });
   }
 }
@@ -300,11 +313,18 @@ function processPlayerAttacks(keys, player) {
         }
         break;
       case 'i':
-        if (target) {
-          spawnUltimate(target);
-          applyDamage('i', player, target);
-          _hitThisCast['i'] = true;
-        } else {
+        // 群攻：对范围内所有怪物造成伤害
+        spawnUltimate(player);
+        let hitCount = 0;
+        for (const m of alive) {
+          if (boxGap(player, m) <= SKILLS.i.range) {
+            applyDamage('i', player, m);
+            hitCount++;
+          }
+        }
+        _hitThisCast['i'] = true;
+        // 如果范围内没有怪物，放空
+        if (hitCount === 0) {
           spawnUltimateDummy(player);
         }
         break;
@@ -763,17 +783,17 @@ function updateXpOrbs() {
         const px = player.x + player.size / 2;
         const py = player.y + player.size / 2;
         const dd = Math.hypot(px - orb.x, py - orb.y) || 1;
-        const pull = 10 * (1 - d / 140) + 3;
+        const pull = (10 * (1 - d / 140) + 3) * globalDT;
         orb.x += (px - orb.x) / dd * pull;
         orb.y += (py - orb.y) / dd * pull;
         continue; // 磁吸时跳过重力/弹跳
       }
     }
 
-    orb.vy += 0.5;
+    orb.vy += 0.5 * globalDT;
     if (orb.vy > 14) orb.vy = 14;
-    orb.y += orb.vy;
-    orb.x += (orb.vx || 0);
+    orb.y += orb.vy * globalDT;
+    orb.x += (orb.vx || 0) * globalDT;
 
     for (const p of platforms) {
       if (orb.x > p.x + 4 && orb.x < p.x + p.w - 4) {
@@ -882,17 +902,17 @@ function updateHpOrbs() {
         const px = player.x + player.size / 2;
         const py = player.y + player.size / 2;
         const dd = Math.hypot(px - orb.x, py - orb.y) || 1;
-        const pull = 10 * (1 - d / 140) + 3;
+        const pull = (10 * (1 - d / 140) + 3) * globalDT;
         orb.x += (px - orb.x) / dd * pull;
         orb.y += (py - orb.y) / dd * pull;
         continue; // 磁吸时跳过重力/弹跳
       }
     }
 
-    orb.vy += 0.5;
+    orb.vy += 0.5 * globalDT;
     if (orb.vy > 12) orb.vy = 12;
-    orb.y += orb.vy;
-    orb.x += (orb.vx || 0);
+    orb.y += orb.vy * globalDT;
+    orb.x += (orb.vx || 0) * globalDT;
 
     for (const p of platforms) {
       if (orb.x > p.x + 4 && orb.x < p.x + p.w - 4) {

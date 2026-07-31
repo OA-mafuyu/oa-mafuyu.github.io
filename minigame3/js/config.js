@@ -89,8 +89,24 @@ const CONFIG = {
   // 脚底内缩：精灵图可见脚部约在盒子底部上方 ~24px，
   // 落地时让盒底沉入地表 24px，使可见脚恰好踩在地表线上
   FOOT_INSET: 24,
+
+  // 射击怪（雪山场景）
+  SNIPER_HP: 50,                  // 蘑菇怪一半
+  SNIPER_SHOOT_INTERVAL: 5000,    // 5s 射一箭
+  SNIPER_ARROW_SPEED: 16.8,       // 箭速（比主控 9 快，已+20%）
+  SNIPER_ARROW_DAMAGE: 5,
+  SNIPER_SPAWN_INTERVAL: 15000,  // 15s 刷一只
+  SNIPER_SPAWN_MIN_DIST: 500,     // 不能刷在主控附近
+  SNIPER_SIZE: 260,                  // +30% 放大
 };
 
 // 相机偏移（main.js 每帧更新）
 let cameraX = 0;
 let cameraY = 0;
+
+// 帧率补偿系数：以 60fps 为基准，main.js 每帧更新
+let globalDT = 1;
+
+// 当前场景：丛林 → 雪山（杀敌 ≥20 后切换）
+let gameScene = 'forest'; // 'forest' | 'snow'
+let _sceneSwitchedAt = 0;  // 切换时间戳

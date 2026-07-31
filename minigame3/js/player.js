@@ -118,13 +118,13 @@ function updatePlayer(keys) {
       player.onLadder = false;
     } else {
       // 上下爬
-      if (wantUp) player.y -= CONFIG.CLIMB_SPEED;
-      if (wantDown) player.y += CONFIG.CLIMB_SPEED;
+      if (wantUp) player.y -= CONFIG.CLIMB_SPEED * globalDT;
+      if (wantDown) player.y += CONFIG.CLIMB_SPEED * globalDT;
 
       // 梯子上可以左右微调
       let dx = 0;
-      if (keys['a']) { dx -= player.speed * 0.5; player.facingRight = false; }
-      if (keys['d']) { dx += player.speed * 0.5; player.facingRight = true; }
+      if (keys['a']) { dx -= player.speed * 0.5 * globalDT; player.facingRight = false; }
+      if (keys['d']) { dx += player.speed * 0.5 * globalDT; player.facingRight = true; }
       player.x += dx;
       player.x = Math.max(0, Math.min(MAP_W - player.size, player.x));
 
@@ -166,8 +166,8 @@ function updatePlayer(keys) {
 
   // ---- 不在梯子上：水平移动 ----
   let dx = 0;
-  if (keys['a']) { dx -= player.speed; player.facingRight = false; }
-  if (keys['d']) { dx += player.speed; player.facingRight = true; }
+  if (keys['a']) { dx -= player.speed * globalDT; player.facingRight = false; }
+  if (keys['d']) { dx += player.speed * globalDT; player.facingRight = true; }
   player.x += dx;
   player.x = Math.max(0, Math.min(MAP_W - player.size, player.x));
 
@@ -175,9 +175,9 @@ function updatePlayer(keys) {
   const canJump = keys[' '] || keys['w'] || keys['arrowup'];
 
   // ---- 重力 ----
-  player.vy += CONFIG.GRAVITY;
+  player.vy += CONFIG.GRAVITY * globalDT;
   if (player.vy > 20) player.vy = 20;
-  player.y += player.vy;
+  player.y += player.vy * globalDT;
 
   // ---- 平台落地 ----
   player.isOnGround = false;
