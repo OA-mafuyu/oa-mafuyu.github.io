@@ -5,6 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>梗知识答题——但是缝合版</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap');
+
+    :root {
+      --pink: #FF8FAB;
+      --pink-dark: #FF6B9D;
+      --pink-light: #FFB7C5;
+      --pink-lighter: #FFD6E0;
+      --pink-bg: #FFF0F5;
+      --purple: #B39DDB;
+      --purple-light: #D1C4E9;
+      --purple-bg: #F3E5F5;
+      --cyan: #80DEEA;
+      --cyan-bg: #E0F7FA;
+      --mint: #A5D6A7;
+      --mint-bg: #E8F5E9;
+      --cream: #FFF9C4;
+      --white: #FFFFFF;
+      --text: #5D4037;
+      --text-light: #8D6E63;
+      --shadow-sm: 0 2px 8px rgba(255,143,171,0.15);
+      --shadow-md: 0 4px 16px rgba(255,143,171,0.2);
+      --shadow-lg: 0 8px 30px rgba(255,143,171,0.25);
+      --radius: 14px;
+      --radius-lg: 22px;
+      --radius-xl: 28px;
+      --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -12,14 +40,48 @@
     }
 
     body {
-      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
-      background: #fff;
-      color: #000;
+      font-family: 'Zen Maru Gothic', 'M PLUS Rounded 1c', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      background: linear-gradient(135deg, #FFE0EC 0%, #E8D5F5 50%, #D5F0F7 100%);
+      color: var(--text);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background:
+        radial-gradient(circle at 15% 85%, rgba(255,183,197,0.35) 0%, transparent 50%),
+        radial-gradient(circle at 85% 15%, rgba(179,157,219,0.25) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(128,222,234,0.15) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ========== 漂浮装饰 ========== */
+    .deco {
+      position: fixed;
+      font-size: 26px;
+      opacity: 0.35;
+      pointer-events: none;
+      z-index: 0;
+      animation: decoFloat 5s ease-in-out infinite;
+    }
+    .deco:nth-child(2n) { animation-delay: -1.5s; animation-duration: 6s; }
+    .deco:nth-child(3n) { animation-delay: -3s; animation-duration: 7s; }
+
+    @keyframes decoFloat {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(-14px) rotate(8deg); }
+      50% { transform: translateY(-6px) rotate(-4deg); }
+      75% { transform: translateY(-18px) rotate(6deg); }
     }
 
     /* ========== 主容器 ========== */
@@ -27,15 +89,22 @@
       text-align: center;
       max-width: 600px;
       padding: 40px 20px;
+      position: relative;
+      z-index: 1;
     }
 
     /* ========== 大标题 ========== */
     .main-title {
-      font-size: 48px;
+      font-size: 44px;
       font-weight: 900;
-      letter-spacing: 4px;
+      letter-spacing: 3px;
       margin-bottom: 60px;
-      line-height: 1.3;
+      line-height: 1.4;
+      background: linear-gradient(135deg, #FF6B9D, #B39DDB, #80DEEA);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 3px 6px rgba(255,107,157,0.3));
     }
 
     /* ========== 按钮组 ========== */
@@ -50,46 +119,57 @@
       width: 280px;
       padding: 16px 0;
       font-size: 18px;
-      border: 2px solid #000;
-      background: #fff;
-      color: #000;
+      border: 3px solid var(--pink);
+      background: var(--white);
+      color: var(--pink);
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: all 0.3s var(--bounce);
       letter-spacing: 2px;
+      border-radius: var(--radius-xl);
+      font-weight: 700;
+      font-family: inherit;
+      box-shadow: var(--shadow-md);
     }
 
     .btn:hover {
-      background: #000;
-      color: #fff;
+      background: var(--pink);
+      color: var(--white);
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 8px 25px rgba(255,143,171,0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0) scale(0.97);
     }
 
     .btn-primary {
-      background: #000;
-      color: #fff;
-      font-weight: 700;
+      background: linear-gradient(135deg, var(--pink), var(--pink-dark));
+      color: var(--white);
+      font-weight: 800;
       font-size: 20px;
+      border-color: transparent;
     }
 
     .btn-primary:hover {
-      background: #333;
-      border-color: #333;
+      background: linear-gradient(135deg, var(--pink-dark), var(--pink));
+      border-color: transparent;
+      transform: translateY(-3px) scale(1.03);
     }
 
     /* ========== 选择面板 ========== */
     .select-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.5);
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(93, 64, 55, 0.35);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1000;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.15s ease;
+      transition: opacity 0.25s ease;
+      backdrop-filter: blur(6px);
     }
 
     .select-overlay.active {
@@ -98,18 +178,21 @@
     }
 
     .select-box {
-      background: #fff;
-      border: 2px solid #000;
+      background: var(--white);
+      border: 3px solid var(--pink-light);
       padding: 36px;
       text-align: center;
       max-width: 400px;
       width: 90%;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
     }
 
     .select-title {
       font-size: 22px;
-      font-weight: 700;
+      font-weight: 800;
       margin-bottom: 24px;
+      color: var(--text);
     }
 
     .select-list {
@@ -122,41 +205,52 @@
     .select-item {
       padding: 14px 0;
       font-size: 16px;
-      border: 2px solid #000;
-      background: #fff;
-      color: #000;
+      border: 2px solid var(--pink-lighter);
+      background: var(--white);
+      color: var(--text);
       cursor: pointer;
-      transition: all 0.12s ease;
+      transition: all 0.25s var(--bounce);
       letter-spacing: 1px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-family: inherit;
     }
 
     .select-item:hover {
-      background: #000;
-      color: #fff;
+      background: var(--pink-bg);
+      border-color: var(--pink);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
     }
 
     .select-item.selected {
-      background: #000;
-      color: #fff;
+      background: var(--pink);
+      color: var(--white);
+      border-color: var(--pink);
     }
 
     .select-close {
       padding: 10px 28px;
       font-size: 14px;
-      border: 1px solid #999;
-      background: #fff;
-      color: #666;
+      border: 2px solid var(--purple-light);
+      background: var(--white);
+      color: var(--text-light);
       cursor: pointer;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-weight: 600;
+      transition: all 0.25s ease;
     }
 
     .select-close:hover {
-      border-color: #000;
-      color: #000;
+      border-color: var(--purple);
+      color: var(--purple);
+      background: var(--purple-bg);
     }
 
     .select-hint {
       font-size: 13px;
-      color: #999;
+      color: var(--text-light);
       margin-top: 12px;
     }
 
@@ -167,55 +261,63 @@
       align-items: center;
       padding: 14px 16px;
       font-size: 16px;
-      border: 2px solid #e0e0e0;
-      background: #fff;
-      color: #000;
+      border: 2px solid #F0E0E8;
+      background: var(--white);
+      color: var(--text);
       cursor: pointer;
-      transition: all 0.12s ease;
+      transition: all 0.25s var(--bounce);
+      border-radius: var(--radius);
+      font-family: inherit;
     }
 
     .bank-select-item:hover {
-      border-color: #000;
+      border-color: var(--pink);
+      background: var(--pink-bg);
+      transform: translateY(-1px);
     }
 
     .bank-select-item .bank-name {
       text-align: left;
       letter-spacing: 1px;
+      font-weight: 600;
     }
 
     .bank-select-item .bank-checkbox {
-      width: 22px;
-      height: 22px;
-      border: 2px solid #000;
+      width: 26px;
+      height: 26px;
+      border: 2px solid var(--pink-light);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 14px;
       font-weight: 900;
       flex-shrink: 0;
+      border-radius: 8px;
+      color: var(--pink);
+      transition: all 0.2s ease;
     }
 
     .bank-select-item.selected {
-      border-color: #000;
-      background: #000;
-      color: #fff;
+      border-color: var(--pink);
+      background: var(--pink);
+      color: var(--white);
     }
 
     .bank-select-item.selected .bank-checkbox {
-      border-color: #fff;
-      background: #fff;
-      color: #000;
+      border-color: var(--white);
+      background: var(--white);
+      color: var(--pink);
     }
 
     /* ========== 成就弹窗（右下角滑动弹出） ========== */
     @keyframes achSlideIn {
-      0%   { transform: translateX(120%); }
-      100% { transform: translateX(0); }
+      0%   { transform: translateX(120%) scale(0.8); opacity: 0; }
+      100% { transform: translateX(0) scale(1); opacity: 1; }
     }
 
     @keyframes achSlideOut {
-      0%   { transform: translateX(0); }
-      100% { transform: translateX(120%); }
+      0%   { transform: translateX(0) scale(1); opacity: 1; }
+      100% { transform: translateX(120%) scale(0.8); opacity: 0; }
     }
 
     .ach-popup {
@@ -223,17 +325,18 @@
       right: 20px;
       bottom: 30px;
       width: 280px;
-      background: #fff;
-      border: 2px solid #000;
+      background: var(--white);
+      border: 3px solid var(--pink-light);
       padding: 16px;
       z-index: 2000;
       transform: translateX(120%);
       transition: none;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      box-shadow: var(--shadow-lg);
+      border-radius: var(--radius-lg);
     }
 
     .ach-popup.show {
-      animation: achSlideIn 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+      animation: achSlideIn 0.5s var(--bounce) forwards;
     }
 
     .ach-popup.hide-slide {
@@ -248,13 +351,16 @@
     }
 
     .ach-popup .ach-popup-icon {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       flex-shrink: 0;
-      border: 1px solid #e0e0e0;
+      border: 2px solid var(--pink-lighter);
       display: flex;
       align-items: center;
       justify-content: center;
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--pink-bg);
     }
 
     .ach-popup .ach-popup-icon img {
@@ -264,14 +370,14 @@
     }
 
     .ach-popup .ach-popup-title {
-      font-weight: 900;
+      font-weight: 800;
       font-size: 16px;
-      color: #000;
+      color: var(--text);
     }
 
     .ach-popup .ach-popup-desc {
       font-size: 12px;
-      color: #666;
+      color: var(--text-light);
       margin-top: 4px;
     }
 
@@ -280,21 +386,32 @@
       display: flex;
       align-items: center;
       gap: 14px;
-      padding: 12px;
-      border: 1px solid #e0e0e0;
-      margin-bottom: 8px;
+      padding: 14px;
+      border: 2px solid #F0E0E8;
+      margin-bottom: 10px;
       text-align: left;
+      border-radius: var(--radius);
+      transition: all 0.2s ease;
+      background: var(--white);
+    }
+
+    .ach-card:hover {
+      border-color: var(--pink-lighter);
+      background: var(--pink-bg);
+      transform: translateX(4px);
     }
 
     .ach-card .ach-icon {
-      width: 48px;
-      height: 48px;
+      width: 52px;
+      height: 52px;
       flex-shrink: 0;
-      border: 1px solid #e0e0e0;
+      border: 2px solid var(--pink-lighter);
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      border-radius: 14px;
+      background: var(--pink-bg);
     }
 
     .ach-card .ach-icon img {
@@ -307,26 +424,35 @@
       font-weight: 700;
       font-size: 15px;
       margin-bottom: 2px;
+      color: var(--text);
     }
 
     .ach-card .ach-info .ach-desc {
       font-size: 12px;
-      color: #666;
+      color: var(--text-light);
     }
 
     .ach-card.locked {
-      opacity: 0.35;
+      opacity: 0.4;
     }
 
     .ach-card.locked .ach-icon {
-      background: #f0f0f0;
+      background: #f5f5f5;
+      border-color: #e0e0e0;
     }
-
-    
-
   </style>
 </head>
 <body>
+
+  <!-- 漂浮装饰 -->
+  <div class="deco" style="top:8%;left:6%;font-size:32px;">♡</div>
+  <div class="deco" style="top:12%;right:10%;font-size:22px;">⭐</div>
+  <div class="deco" style="top:65%;left:10%;font-size:24px;">✨</div>
+  <div class="deco" style="top:72%;right:6%;font-size:28px;">♡</div>
+  <div class="deco" style="top:35%;left:3%;font-size:20px;">🌸</div>
+  <div class="deco" style="top:45%;right:4%;font-size:24px;">💫</div>
+  <div class="deco" style="top:88%;left:45%;font-size:22px;">🎀</div>
+  <div class="deco" style="top:5%;left:50%;font-size:20px;">✨</div>
 
   <div class="home-container">
     <!-- 大标题 -->

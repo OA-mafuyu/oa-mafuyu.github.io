@@ -5,33 +5,108 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>联系我们</title>
   <style>
-    body {
-      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
-      max-width: 600px;
-      margin: 60px auto;
-      padding: 20px;
-      color: #000;
-      background: #fff;
+    @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap');
+
+    :root {
+      --pink: #FF8FAB;
+      --pink-dark: #FF6B9D;
+      --pink-light: #FFB7C5;
+      --pink-lighter: #FFD6E0;
+      --pink-bg: #FFF0F5;
+      --purple: #B39DDB;
+      --purple-light: #D1C4E9;
+      --text: #5D4037;
+      --text-light: #8D6E63;
+      --shadow-md: 0 4px 16px rgba(255,143,171,0.2);
+      --radius: 14px;
+      --radius-lg: 22px;
     }
-    a { color: #000; }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Zen Maru Gothic', 'M PLUS Rounded 1c', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      background: linear-gradient(135deg, #FFF5F8 0%, #F5EEFF 50%, #EDF8FF 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .contact-card {
+      max-width: 480px;
+      width: 100%;
+      background: var(--white);
+      border: 3px solid var(--pink-light);
+      border-radius: var(--radius-lg);
+      padding: 48px 36px;
+      text-align: center;
+      box-shadow: var(--shadow-md);
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, var(--pink-dark), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    p {
+      font-size: 16px;
+      line-height: 1.8;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .wechat-id {
+      display: inline-block;
+      background: var(--pink-bg);
+      border: 2px solid var(--pink-lighter);
+      padding: 8px 20px;
+      border-radius: var(--radius);
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--pink-dark);
+      letter-spacing: 1px;
+      margin: 8px 0;
+    }
+
     .back-link {
       position: fixed;
       top: 20px;
       left: 24px;
-      color: #000;
+      color: var(--pink);
       font-size: 15px;
       letter-spacing: 1px;
       text-decoration: none;
       z-index: 10;
+      font-weight: 700;
+      transition: all 0.2s ease;
+      padding: 6px 12px;
+      border-radius: var(--radius);
     }
+
     .back-link:hover {
-      text-decoration: underline;
+      background: var(--pink-bg);
+      text-decoration: none;
+      transform: translateX(-2px);
     }
   </style>
 </head>
 <body>
-  <h1>联系我们</h1>
-  <p>答题部分制作者微信号"kimi_301"喵，想要出题的人可以联系喵</p>
+  <div class="contact-card">
+    <h1>联系我们</h1>
+    <p>答题部分制作者微信号</p>
+    <div class="wechat-id">kimi_301</div>
+    <p>想要出题的人可以联系喵～</p>
+  </div>
   <p><a class="back-link" href="index.html">← 返回首页</a></p>
 </body>
 </html>

@@ -5,63 +5,132 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>游戏设置</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
-      background: #fff; color: #000; min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center;
+    @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap');
+
+    :root {
+      --pink: #FF8FAB;
+      --pink-dark: #FF6B9D;
+      --pink-light: #FFB7C5;
+      --pink-lighter: #FFD6E0;
+      --pink-bg: #FFF0F5;
+      --purple: #B39DDB;
+      --purple-light: #D1C4E9;
+      --purple-bg: #F3E5F5;
+      --cyan: #80DEEA;
+      --cyan-bg: #E0F7FA;
+      --mint: #A5D6A7;
+      --mint-bg: #E8F5E9;
+      --cream: #FFF9C4;
+      --white: #FFFFFF;
+      --text: #5D4037;
+      --text-light: #8D6E63;
+      --shadow-sm: 0 2px 8px rgba(255,143,171,0.15);
+      --shadow-md: 0 4px 16px rgba(255,143,171,0.2);
+      --shadow-lg: 0 8px 30px rgba(255,143,171,0.25);
+      --radius: 14px;
+      --radius-lg: 22px;
+      --radius-xl: 28px;
+      --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Zen Maru Gothic', 'M PLUS Rounded 1c', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      background: linear-gradient(135deg, #FFF5F8 0%, #F5EEFF 50%, #EDF8FF 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
     .container {
       max-width: 500px; width: 100%; padding: 60px 20px;
     }
+
     h1 {
       font-size: 32px; font-weight: 900; letter-spacing: 4px;
       text-align: center; margin-bottom: 48px;
+      background: linear-gradient(135deg, var(--pink-dark), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 2px 4px rgba(255,107,157,0.3));
     }
+
     .setting-row {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 18px 0; border-bottom: 1px solid #e0e0e0;
+      padding: 18px 0; border-bottom: 2px solid var(--pink-lighter);
     }
+
     .setting-label {
       font-size: 18px; font-weight: 700; letter-spacing: 1px;
+      color: var(--text);
     }
+
     .toggle {
-      position: relative; width: 52px; height: 28px;
+      position: relative; width: 56px; height: 30px;
     }
+
     .toggle input { opacity: 0; width: 0; height: 0; }
+
     .toggle-slider {
       position: absolute; inset: 0; cursor: pointer;
-      background: #ccc; border-radius: 999px; transition: .2s;
+      background: #E0D5DC; border-radius: 999px; transition: .3s;
+      border: 2px solid transparent;
     }
+
     .toggle-slider::before {
       content: ''; position: absolute; left: 3px; top: 3px;
       width: 22px; height: 22px;
-      background: #fff; border-radius: 50%; transition: .2s;
+      background: #fff; border-radius: 50%; transition: .3s var(--bounce);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
-    .toggle input:checked + .toggle-slider { background: #000; }
-    .toggle input:checked + .toggle-slider::before { transform: translateX(24px); }
+
+    .toggle input:checked + .toggle-slider {
+      background: linear-gradient(135deg, var(--pink), var(--pink-dark));
+      border-color: var(--pink-light);
+    }
+
+    .toggle input:checked + .toggle-slider::before {
+      transform: translateX(26px);
+    }
+
     .back-link {
       position: fixed;
       top: 20px;
       left: 24px;
-      color: #000;
+      color: var(--pink);
       font-size: 15px;
       letter-spacing: 1px;
       text-decoration: none;
       z-index: 10;
+      font-weight: 700;
+      transition: all 0.2s ease;
+      padding: 6px 12px;
+      border-radius: var(--radius);
     }
+
     .back-link:hover {
-      text-decoration: underline;
+      background: var(--pink-bg);
+      text-decoration: none;
+      transform: translateX(-2px);
     }
+
     .setting-hint {
-      font-size: 12px; color: #999; margin-top: -19px; margin-bottom: 8px; padding-left: 4px;
+      font-size: 12px; color: var(--text-light); margin-top: -19px; margin-bottom: 8px; padding-left: 4px;
     }
+
     .btn-clear {
-      padding: 6px 18px; font-size: 13px; border: 2px solid #e00; color: #e00;
-      background: #fff; cursor: pointer; transition: all 0.12s ease;
+      padding: 8px 20px; font-size: 13px; border: 2px solid #EF9A9A; color: #E57373;
+      background: var(--white); cursor: pointer; transition: all 0.25s var(--bounce);
+      border-radius: var(--radius); font-family: inherit; font-weight: 700;
     }
+
     .btn-clear:hover {
-      background: #e00; color: #fff;
+      background: #FFCDD2; border-color: #E57373;
+      transform: translateY(-1px);
     }
   </style>
 </head>

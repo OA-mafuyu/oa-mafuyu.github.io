@@ -5,38 +5,126 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>游戏说明</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap');
+
+    :root {
+      --pink: #FF8FAB;
+      --pink-dark: #FF6B9D;
+      --pink-light: #FFB7C5;
+      --pink-lighter: #FFD6E0;
+      --pink-bg: #FFF0F5;
+      --purple: #B39DDB;
+      --purple-light: #D1C4E9;
+      --purple-bg: #F3E5F5;
+      --cyan: #80DEEA;
+      --cyan-bg: #E0F7FA;
+      --mint: #A5D6A7;
+      --mint-bg: #E8F5E9;
+      --cream: #FFF9C4;
+      --white: #FFFFFF;
+      --text: #5D4037;
+      --text-light: #8D6E63;
+      --shadow-sm: 0 2px 8px rgba(255,143,171,0.15);
+      --shadow-md: 0 4px 16px rgba(255,143,171,0.2);
+      --radius: 14px;
+      --radius-lg: 22px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
-      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      font-family: 'Zen Maru Gothic', 'M PLUS Rounded 1c', 'Microsoft YaHei', 'PingFang SC', sans-serif;
       max-width: 680px;
       margin: 60px auto;
       padding: 20px;
-      color: #000;
-      background: #fff;
+      color: var(--text);
+      background: linear-gradient(135deg, #FFF5F8 0%, #F5EEFF 50%, #EDF8FF 100%);
+      min-height: 100vh;
       line-height: 1.8;
     }
-    h1 { font-size: 32px; font-weight: 900; letter-spacing: 4px; margin-bottom: 40px; text-align: center; }
-    h2 { font-size: 22px; margin-top: 48px; margin-bottom: 16px; border-bottom: 2px solid #000; padding-bottom: 4px; }
-    h3 { font-size: 17px; margin-top: 32px; margin-bottom: 10px; }
+
+    h1 {
+      font-size: 32px; font-weight: 900; letter-spacing: 4px;
+      margin-bottom: 40px; text-align: center;
+      background: linear-gradient(135deg, var(--pink-dark), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 2px 4px rgba(255,107,157,0.3));
+    }
+
+    h2 {
+      font-size: 22px; margin-top: 48px; margin-bottom: 16px;
+      border-bottom: 3px solid var(--pink-lighter); padding-bottom: 6px;
+      color: var(--text); font-weight: 800;
+    }
+
+    h3 {
+      font-size: 17px; margin-top: 32px; margin-bottom: 10px;
+      color: var(--pink-dark); font-weight: 700;
+    }
+
     p { margin: 10px 0; font-size: 15px; }
     ul, ol { padding-left: 24px; margin: 8px 0; }
     li { font-size: 15px; margin: 4px 0; }
-    table { border-collapse: collapse; width: 100%; margin: 12px 0; }
-    th, td { border: 1px solid #000; padding: 8px 14px; text-align: left; font-size: 14px; }
-    th { background: #eee; font-weight: 700; }
-    code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
-    kbd { display: inline-block; padding: 2px 8px; border: 1px solid #000; border-radius: 4px; font-family: inherit; margin: 0 2px; font-size: 13px; background: #eee; }
+
+    table {
+      border-collapse: collapse; width: 100%; margin: 12px 0;
+      border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    th, td {
+      border: 2px solid var(--pink-lighter); padding: 10px 14px;
+      text-align: left; font-size: 14px;
+    }
+    th {
+      background: var(--pink-bg); font-weight: 800;
+      color: var(--pink-dark);
+    }
+
+    code {
+      background: var(--purple-bg); padding: 2px 8px; border-radius: 6px;
+      font-size: 13px; color: var(--purple);
+    }
+
+    kbd {
+      display: inline-block; padding: 3px 10px; border: 2px solid var(--pink-light);
+      border-radius: 8px; font-family: inherit; margin: 0 2px; font-size: 13px;
+      background: var(--pink-bg); font-weight: 700; color: var(--pink-dark);
+      box-shadow: 0 2px 0 var(--pink-light);
+    }
+
+    pre {
+      background: var(--pink-bg) !important;
+      padding: 16px !important;
+      border: 2px solid var(--pink-lighter) !important;
+      border-radius: var(--radius) !important;
+      font-size: 14px !important;
+      line-height: 1.8 !important;
+    }
+
     .back-link {
       position: fixed;
       top: 20px;
       left: 24px;
-      color: #000;
+      color: var(--pink);
       font-size: 15px;
       letter-spacing: 1px;
       text-decoration: none;
       z-index: 10;
       font-weight: 700;
+      transition: all 0.2s ease;
+      padding: 6px 12px;
+      border-radius: var(--radius);
     }
-    .back-link:hover { text-decoration: underline; }
+
+    .back-link:hover {
+      background: var(--pink-bg);
+      text-decoration: none;
+      transform: translateX(-2px);
+    }
+
+    b { color: var(--pink-dark); }
   </style>
 </head>
 <body>

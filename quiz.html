@@ -5,6 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>答题中</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap');
+
+    :root {
+      --pink: #FF8FAB;
+      --pink-dark: #FF6B9D;
+      --pink-light: #FFB7C5;
+      --pink-lighter: #FFD6E0;
+      --pink-bg: #FFF0F5;
+      --purple: #B39DDB;
+      --purple-light: #D1C4E9;
+      --purple-bg: #F3E5F5;
+      --cyan: #80DEEA;
+      --cyan-bg: #E0F7FA;
+      --mint: #A5D6A7;
+      --mint-bg: #E8F5E9;
+      --cream: #FFF9C4;
+      --white: #FFFFFF;
+      --text: #5D4037;
+      --text-light: #8D6E63;
+      --shadow-sm: 0 2px 8px rgba(255,143,171,0.15);
+      --shadow-md: 0 4px 16px rgba(255,143,171,0.2);
+      --shadow-lg: 0 8px 30px rgba(255,143,171,0.25);
+      --radius: 14px;
+      --radius-lg: 22px;
+      --radius-xl: 28px;
+      --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -12,9 +40,9 @@
     }
 
     body {
-      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
-      background: #fff;
-      color: #000;
+      font-family: 'Zen Maru Gothic', 'M PLUS Rounded 1c', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      background: linear-gradient(135deg, #FFF5F8 0%, #F5EEFF 50%, #EDF8FF 100%);
+      color: var(--text);
       min-height: 100vh;
     }
 
@@ -24,17 +52,20 @@
       justify-content: space-between;
       align-items: center;
       padding: 16px 32px;
-      border-bottom: 2px solid #000;
+      border-bottom: 3px solid var(--pink-lighter);
       font-size: 16px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(8px);
     }
 
     .timer {
-      font-weight: 700;
+      font-weight: 800;
       font-size: 20px;
+      color: var(--text);
     }
 
     .timer.warning {
-      color: #e00;
+      color: #FF5252;
       animation: blink 0.5s ease-in-out infinite alternate;
     }
 
@@ -57,11 +88,12 @@
 
     .question-text {
       font-size: 24px;
-      font-weight: 700;
+      font-weight: 800;
       text-align: center;
       margin-bottom: 48px;
       line-height: 1.6;
       min-height: 60px;
+      color: var(--text);
     }
 
     /* ========== 选项按钮 ========== */
@@ -76,30 +108,40 @@
     .option-btn {
       padding: 20px 16px;
       font-size: 18px;
-      border: 2px solid #000;
-      background: #fff;
-      color: #000;
+      border: 3px solid var(--pink-light);
+      background: var(--white);
+      color: var(--text);
       cursor: pointer;
-      transition: all 0.12s ease;
+      transition: all 0.25s var(--bounce);
       text-align: left;
       position: relative;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
     }
 
     .option-btn:hover:not(.disabled) {
-      background: #f0f0f0;
+      background: var(--pink-bg);
+      border-color: var(--pink);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
     }
 
     .option-btn .option-label {
       display: inline-block;
-      width: 28px;
-      height: 28px;
-      line-height: 28px;
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
       text-align: center;
-      border: 2px solid #000;
+      border: 2px solid var(--pink);
       margin-right: 10px;
-      font-weight: 700;
+      font-weight: 800;
       font-size: 14px;
       vertical-align: middle;
+      border-radius: 10px;
+      color: var(--pink);
+      background: var(--pink-bg);
     }
 
     .option-btn.disabled {
@@ -108,14 +150,15 @@
     }
 
     .option-btn.correct-flash {
-      background: #000;
-      color: #fff;
-      border-color: #000;
+      background: var(--mint);
+      color: var(--white);
+      border-color: var(--mint);
+      box-shadow: 0 4px 16px rgba(165,214,167,0.4);
     }
 
     .option-btn.wrong-flash {
-      background: #ccc;
-      border-color: #999;
+      background: #FFCDD2;
+      border-color: #EF9A9A;
     }
 
     /* ========== 答错遮罩层 ========== */
@@ -125,7 +168,7 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 240, 245, 0.95);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -147,6 +190,8 @@
       font-size: 48px;
       font-weight: 900;
       letter-spacing: 4px;
+      color: var(--pink-dark);
+      text-shadow: 0 2px 8px rgba(255,107,157,0.3);
     }
 
     .wrong-image {
@@ -185,19 +230,21 @@
 
     .progress-bar {
       width: 120px;
-      height: 4px;
-      background: #e0e0e0;
+      height: 6px;
+      background: #F0E0E8;
       position: relative;
       overflow: hidden;
+      border-radius: 999px;
     }
 
     .progress-bar-fill {
       height: 100%;
-      background: #000;
+      background: linear-gradient(90deg, var(--pink), var(--purple));
       position: absolute;
       right: 0;
       top: 0;
       transition: width 1s linear;
+      border-radius: 999px;
     }
 
     /* ========== 成就弹出提示 ========== */
@@ -206,15 +253,16 @@
       right: -320px;
       bottom: 100px;
       width: 300px;
-      background: #fff;
-      border: 2px solid #000;
+      background: var(--white);
+      border: 3px solid var(--pink-light);
       z-index: 1200;
       display: flex;
       align-items: center;
       gap: 14px;
       padding: 16px;
-      transition: right 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
-      box-shadow: -4px 4px 0 rgba(0,0,0,0.1);
+      transition: right 0.4s var(--bounce);
+      box-shadow: var(--shadow-lg);
+      border-radius: var(--radius-lg);
     }
 
     .ach-popup.show {
@@ -225,11 +273,13 @@
       width: 52px;
       height: 52px;
       flex-shrink: 0;
-      border: 1px solid #e0e0e0;
+      border: 2px solid var(--pink-lighter);
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      border-radius: 14px;
+      background: var(--pink-bg);
     }
 
     .ach-popup .ach-popup-icon img {
@@ -240,29 +290,30 @@
 
     .ach-popup .ach-popup-info .ach-popup-title {
       font-size: 13px;
-      color: #999;
+      color: var(--text-light);
       margin-bottom: 2px;
     }
 
     .ach-popup .ach-popup-info .ach-popup-name {
       font-size: 16px;
-      font-weight: 700;
+      font-weight: 800;
       margin-bottom: 2px;
+      color: var(--text);
     }
 
     .ach-popup .ach-popup-info .ach-popup-desc {
       font-size: 12px;
-      color: #666;
+      color: var(--text-light);
     }
 
     .ach-popup .ach-popup-hint {
       font-size: 10px;
-      color: #999;
+      color: var(--text-light);
       margin-top: 4px;
     }
 
     .ach-popup.frozen {
-      border-color: #e00;
+      border-color: #FF5252;
     }
 
     /* ========== 答对提示 ========== */
@@ -271,16 +322,18 @@
       top: 56px;
       left: 50%;
       transform: translateX(-50%);
-      background: #000;
-      color: #fff;
+      background: var(--mint);
+      color: var(--white);
       padding: 12px 32px;
       font-size: 18px;
-      font-weight: 700;
+      font-weight: 800;
       z-index: 800;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.15s ease;
       letter-spacing: 2px;
+      border-radius: var(--radius-xl);
+      box-shadow: 0 4px 16px rgba(165,214,167,0.4);
     }
 
     .correct-toast.show {
@@ -294,7 +347,7 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(0, 0, 0, 0.55);
+      background: rgba(93, 64, 55, 0.4);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -302,6 +355,7 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.15s ease;
+      backdrop-filter: blur(4px);
     }
 
     .exit-overlay.active {
@@ -310,18 +364,21 @@
     }
 
     .exit-box {
-      background: #fff;
-      border: 2px solid #000;
+      background: var(--white);
+      border: 3px solid var(--pink-light);
       padding: 40px 48px;
       text-align: center;
       max-width: 380px;
       width: 90%;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
     }
 
     .exit-title {
       font-size: 22px;
-      font-weight: 700;
+      font-weight: 800;
       margin-bottom: 32px;
+      color: var(--text);
     }
 
     .exit-btns {
@@ -333,26 +390,30 @@
     .exit-btn {
       padding: 12px 32px;
       font-size: 16px;
-      border: 2px solid #000;
+      border: 3px solid var(--pink);
       cursor: pointer;
-      transition: all 0.12s ease;
-      background: #fff;
-      color: #000;
+      transition: all 0.25s var(--bounce);
+      background: var(--white);
+      color: var(--pink);
       letter-spacing: 1px;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-weight: 700;
     }
 
     .exit-btn:hover {
-      background: #000;
-      color: #fff;
+      background: var(--pink);
+      color: var(--white);
+      transform: translateY(-2px);
     }
 
     .exit-btn.danger {
-      background: #000;
-      color: #fff;
+      background: var(--pink);
+      color: var(--white);
     }
 
     .exit-btn.danger:hover {
-      background: #333;
+      background: var(--pink-dark);
     }
 
     /* ========== 小游戏过渡提示 ========== */
@@ -362,7 +423,7 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(255, 255, 255, 0.97);
+      background: rgba(255, 240, 245, 0.97);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -379,9 +440,10 @@
 
     .minigame-toast-text {
       font-size: 28px;
-      font-weight: 700;
+      font-weight: 800;
       text-align: center;
       line-height: 1.6;
+      color: var(--text);
     }
   </style>
 </head>
@@ -532,7 +594,6 @@
       // ========== 答错图片池 ==========
       // 首次答错固定用 kawaii.png，后续从池中不重复随机
       var kawaiiPool = [
-        'images/kawaii/1.png',  
         'images/kawaii/2.png',  
         'images/kawaii/3.png',
         'images/kawaii/4.png',  
@@ -553,37 +614,72 @@
         'images/kawaii/21.png',
         'images/kawaii/22.png', 
         'images/kawaii/23.png', 
-        'images/kawaii/24.png',
         'images/kawaii/25.png',  
         'images/kawaii/26.png',  
         'images/kawaii/27.png',
         'images/kawaii/28.png',  
-        'images/kawaii/30.png',
         'images/kawaii/32.png',  
         'images/kawaii/33.png'
       ];
       var wrongAnswerCount = 0;
-      var kawaiiShuffled = [];
 
-      function shuffleArray(arr) {
-        var a = arr.slice();
-        for (var i = a.length - 1; i > 0; i--) {
-          var j = Math.floor(Math.random() * (i + 1));
-          var t = a[i]; a[i] = a[j]; a[j] = t;
+      // ========== 答错图片系统（种子决定顺序 + 分批预加载） ==========
+      var imagePreloadCache = {};
+      var kawaiiQueue = [];
+
+      function preloadImage(url) {
+        if (!url || imagePreloadCache.hasOwnProperty(url)) return;
+        var img = new Image();
+        img.onload = function () { imagePreloadCache[url] = img; };
+        img.onerror = function () { imagePreloadCache[url] = null; };
+        img.src = url;
+      }
+
+      function initKawaiiSystem() {
+        // 使用独立种子（gameSeed + 偏移量）决定图片弹出顺序，不影响题目顺序
+        var kawaiiRng = makeRNG(gameSeed + 12345);
+        var pool = kawaiiPool.slice();
+        for (var i = pool.length - 1; i > 0; i--) {
+          var j = Math.floor(kawaiiRng() * (i + 1));
+          var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
         }
-        return a;
+        kawaiiQueue = pool;
+
+        // 第一波预加载：kawaii.png（必定首次出现）+ 队列前 9 张
+        preloadImage('images/kawaii.png');
+        for (var k = 0; k < 9 && k < kawaiiQueue.length; k++) {
+          preloadImage(kawaiiQueue[k]);
+        }
       }
 
       function getFailImage() {
         wrongAnswerCount++;
+        // 第一次答错：固定 kawaii.png，之后不再出现
         if (wrongAnswerCount === 1) {
           return 'images/kawaii.png';
         }
-        var idx = (wrongAnswerCount - 2) % kawaiiPool.length;
-        if (idx === 0) {
-          kawaiiShuffled = shuffleArray(kawaiiPool);
+        // 每 9 次使用后触发下一批预加载（十张用过九张）
+        var queueUsed = wrongAnswerCount - 1;
+        if (queueUsed > 0 && queueUsed % 9 === 0 && queueUsed < kawaiiQueue.length) {
+          var batchEnd = Math.min(queueUsed + 10, kawaiiQueue.length);
+          for (var bi = queueUsed; bi < batchEnd; bi++) {
+            preloadImage(kawaiiQueue[bi]);
+          }
         }
-        return kawaiiShuffled[idx];
+        var idx = (wrongAnswerCount - 2) % kawaiiQueue.length;
+        return kawaiiQueue[idx];
+      }
+
+      // 成就图片预加载（用 setTimeout 分批，避免卡顿阻塞答题）
+      function preloadAchievementImages() {
+        var icons = [];
+        if (typeof ACHIEVEMENTS !== 'undefined') {
+          ACHIEVEMENTS.DEFS.forEach(function (d) { icons.push(d.icon); });
+          icons.push(ACHIEVEMENTS.LOCK_ICON);
+        }
+        icons.forEach(function (url, index) {
+          setTimeout(function () { preloadImage(url); }, index * 80);
+        });
       }
 
       // ========== 音频系统 ==========
@@ -922,6 +1018,11 @@
             localStorage.setItem('quiz_minigame_history', JSON.stringify(minigameHistory));
             localStorage.setItem('quiz_minigame_index', String(minigameIndex));
           }
+
+          // 初始化答错图片系统（种子决定顺序 + 分批预加载）
+          initKawaiiSystem();
+          // 成就图片预加载（低优先级，不阻塞答题）
+          preloadAchievementImages();
 
           // 确保 initialTime 存在（兼容旧存档）
           if (!state.initialTime) state.initialTime = state.timeLeft || 60;
